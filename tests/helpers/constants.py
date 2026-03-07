@@ -54,3 +54,31 @@ UNKNOWN_RPC_METHODS = [
     "",
 ]
 UNKNOWN_RPC_METHODS_IDS = ["camelCase", "getPrefix", "short", "dotted", "empty"]
+
+# ── Compute Budget program ──────────────────────────────────────────
+
+COMPUTE_BUDGET_PROGRAM = "ComputeBudget111111111111111111111111111"
+
+# ── Sysvar addresses ────────────────────────────────────────────────
+
+SYSVAR_CLOCK = "SysvarC1ock11111111111111111111111111111111"
+SYSVAR_RENT = "SysvarRent111111111111111111111111111111"
+SYSVAR_RECENT_BLOCKHASHES = "SysvarRecentB1telekenHashes11111111111111"
+SYSVAR_SLOT_HISTORY = "SysvarS1otHistory11111111111111111111111111"
+SYSVAR_EPOCH_SCHEDULE = "SysvarEpochScheworLd11111111111111111111111"
+
+SYSVARS: list[tuple[str, str]] = [
+    ("clock", SYSVAR_CLOCK),
+    ("rent", SYSVAR_RENT),
+]
+
+# ── Additional well-known program addresses ─────────────────────────
+
+MEMO_PROGRAM_V2 = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+
+ALL_KNOWN_PROGRAMS: list[tuple[str, str]] = [
+    *NATIVE_PROGRAMS,
+    ("token_program", TOKEN_PROGRAM),
+    ("memo_program", MEMO_PROGRAM),
+    ("compute_budget", COMPUTE_BUDGET_PROGRAM),
+]

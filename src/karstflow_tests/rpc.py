@@ -276,3 +276,124 @@ class RpcClient:
 
     async def get_recent_performance_samples(self, limit: int = 10) -> list[dict[str, Any]]:
         return await self.request("getRecentPerformanceSamples", [limit])
+
+    async def get_block_production(self, identity: str | None = None) -> dict[str, Any]:
+        params: dict[str, Any] = {}
+        if identity:
+            params["identity"] = identity
+        return await self.request("getBlockProduction", [params] if params else None)
+
+    async def get_block_commitment(self, slot: int) -> dict[str, Any]:
+        return await self.request("getBlockCommitment", [slot])
+
+    async def get_first_available_block(self) -> int:
+        return await self.request("getFirstAvailableBlock")
+
+    async def get_highest_snapshot_slot(self) -> dict[str, Any]:
+        return await self.request("getHighestSnapshotSlot")
+
+    async def get_largest_accounts(self, *, filter_type: str | None = None) -> dict[str, Any]:
+        params: list[Any] = []
+        if filter_type:
+            params.append({"filter": filter_type})
+        return await self.request("getLargestAccounts", params or None)
+
+    async def get_program_accounts(
+        self,
+        program_id: str,
+        *,
+        encoding: str = "base64",
+        filters: list[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
+        config: dict[str, Any] = {"encoding": encoding}
+        if filters:
+            config["filters"] = filters
+        return await self.request("getProgramAccounts", [program_id, config])
+
+    async def get_token_account_balance(self, pubkey: str) -> dict[str, Any]:
+        return await self.request("getTokenAccountBalance", [pubkey])
+
+    async def get_token_accounts_by_owner(
+        self,
+        owner: str,
+        *,
+        mint: str | None = None,
+        program_id: str | None = None,
+        encoding: str = "base64",
+    ) -> dict[str, Any]:
+        filter_param: dict[str, str] = {}
+        if mint:
+            filter_param["mint"] = mint
+        elif program_id:
+            filter_param["programId"] = program_id
+        return await self.request(
+            "getTokenAccountsByOwner",
+            [owner, filter_param, {"encoding": encoding}],
+        )
+
+    async def get_token_supply(self, mint: str) -> dict[str, Any]:
+        return await self.request("getTokenSupply", [mint])
+
+    async def get_transaction_count(self, commitment: Commitment | None = None) -> int:
+        c = commitment or self.commitment
+        return await self.request("getTransactionCount", [{"commitment": c.value}])
+
+    async def get_stake_activation(
+        self, pubkey: str, *, epoch: int | None = None
+    ) -> dict[str, Any]:
+        config: dict[str, Any] = {}
+        if epoch is not None:
+            config["epoch"] = epoch
+        return await self.request("getStakeActivation", [pubkey, config] if config else [pubkey])
+
+    async def get_stake_minimum_delegation(self) -> dict[str, Any]:
+        return await self.request("getStakeMinimumDelegation")
+
+    async def get_inflation_governor(self) -> dict[str, Any]:
+        return await self.request("getInflationGovernor")
+
+    async def get_inflation_reward(
+        self, addresses: list[str], *, epoch: int | None = None
+    ) -> list[dict[str, Any] | None]:
+        config: dict[str, Any] = {}
+        if epoch is not None:
+            config["epoch"] = epoch
+        return await self.request(
+            "getInflationReward", [addresses, config] if config else [addresses]
+        )
+
+    async def get_fees(self) -> dict[str, Any]:
+        return await self.request("getFees")
+
+    async def get_fee_for_message(self, message_b64: str) -> int | None:
+        return await self.request("getFeeForMessage", [message_b64])
+
+    async def get_blocks(self, start_slot: int, end_slot: int | None = None) -> list[int]:
+        params: list[Any] = [start_slot]
+        if end_slot is not None:
+            params.append(end_slot)
+        return await self.request("getBlocks", params)
+
+    async def get_blocks_with_limit(self, start_slot: int, limit: int) -> list[int]:
+        return await self.request("getBlocksWithLimit", [start_slot, limit])
+
+    async def get_recent_prioritization_fees(
+        self, addresses: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        return await self.request("getRecentPrioritizationFees", [addresses] if addresses else None)
+
+    async def get_max_retransmit_slot(self) -> int:
+        return await self.request("getMaxRetransmitSlot")
+
+    async def get_max_shred_insert_slot(self) -> int:
+        return await self.request("getMaxShredInsertSlot")
+
+    async def minimum_ledger_slot(self) -> int:
+        return await self.request("minimumLedgerSlot")
+
+    async def get_slot_leader(self, commitment: Commitment | None = None) -> str:
+        c = commitment or self.commitment
+        return await self.request("getSlotLeader", [{"commitment": c.value}])
+
+    async def get_slot_leaders(self, start_slot: int, limit: int) -> list[str]:
+        return await self.request("getSlotLeaders", [start_slot, limit])

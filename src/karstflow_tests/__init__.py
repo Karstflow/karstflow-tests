@@ -23,6 +23,15 @@ from karstflow_tests.factories import (
     rpc_methods_with_pubkey_param,
 )
 from karstflow_tests.node import ClusterHandle, NodeHandle, NodeManager
+from karstflow_tests.programs import (
+    build_compute_budget_set_price,
+    build_compute_budget_set_units,
+    build_memo_instruction,
+    create_nonce_account,
+    create_program_owned_account,
+    send_memo,
+    send_multi_instruction_tx,
+)
 from karstflow_tests.rpc import RpcClient
 from karstflow_tests.transactions import build_and_send_transfer
 from karstflow_tests.types import (
@@ -74,7 +83,13 @@ __all__ = [
     "assert_transaction_confirmed",
     # Helpers
     "build_and_send_transfer",
+    # Programs
+    "build_compute_budget_set_price",
+    "build_compute_budget_set_units",
+    "build_memo_instruction",
     "create_funded_keypair",
+    "create_nonce_account",
+    "create_program_owned_account",
     "get_balance_lamports",
     "invalid_pubkey_strings",
     "known_program_ids",
@@ -82,6 +97,8 @@ __all__ = [
     "load_config",
     "rpc_methods_readonly",
     "rpc_methods_with_pubkey_param",
+    "send_memo",
+    "send_multi_instruction_tx",
     "wait_for_confirmation",
     "wait_for_health",
 ]
