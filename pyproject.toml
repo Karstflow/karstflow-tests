@@ -47,8 +47,52 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "UP"]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "W",     # pycodestyle warnings
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "PIE",   # flake8-pie
+    "RUF",   # ruff-specific rules
+    "PT",    # flake8-pytest-style
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit (security)
+    "T20",   # flake8-print (no stray prints)
+    "TCH",   # flake8-type-checking
+    "RET",   # flake8-return
+    "C4",    # flake8-comprehensions
+]
+ignore = [
+    "S101",     # assert is fine in tests
+    "S603",     # subprocess calls are intentional (node manager)
+    "S607",     # partial executable paths OK for docker/curl
+    "S110",     # try-except-pass OK in cleanup/teardown paths
+    "TCH",      # type-checking imports add complexity for no benefit here
+    "ASYNC109", # custom timeout params are intentional pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "T20"]  # security + print checks relaxed in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.mypy]
 python_version = "3.11"
 strict = true
+warn_return_any = false
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "solana.*",
+    "solders.*",
+    "locust.*",
+    "pytest_docker.*",
+    "pytest_benchmark.*",
+]
+ignore_missing_imports = true
