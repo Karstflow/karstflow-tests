@@ -1,33 +1,117 @@
 services:
   validator-1:
     image: karstflow:latest
+    container_name: karstflow-node-1
     ports:
-      - "8899:8899"
-      - "8900:8900"
+      - "8899:8899"   # JSON-RPC
+      - "8900:8900"   # WebSocket
     command: ["--config", "/etc/karstflow/config.toml", "--dev"]
+    environment:
+      RUST_LOG: "info"
+      RUST_BACKTRACE: "1"
+    volumes:
+      - node1-ledger:/var/lib/karstflow/ledger
+      - node1-accounts:/var/lib/karstflow/accounts
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - karstflow-cluster
 
   validator-2:
     image: karstflow:latest
+    container_name: karstflow-node-2
     ports:
-      - "8999:8899"
-      - "9000:8900"
+      - "8999:8899"   # JSON-RPC
+      - "9000:8900"   # WebSocket
     command: ["--config", "/etc/karstflow/config.toml", "--entrypoint", "validator-1:8001"]
+    environment:
+      RUST_LOG: "info"
+      RUST_BACKTRACE: "1"
+    volumes:
+      - node2-ledger:/var/lib/karstflow/ledger
+      - node2-accounts:/var/lib/karstflow/accounts
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
     depends_on:
       validator-1:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - karstflow-cluster
 
   validator-3:
     image: karstflow:latest
+    container_name: karstflow-node-3
     ports:
-      - "9099:8899"
-      - "9100:8900"
+      - "9099:8899"   # JSON-RPC
+      - "9100:8900"   # WebSocket
     command: ["--config", "/etc/karstflow/config.toml", "--entrypoint", "validator-1:8001"]
+    environment:
+      RUST_LOG: "info"
+      RUST_BACKTRACE: "1"
+    volumes:
+      - node3-ledger:/var/lib/karstflow/ledger
+      - node3-accounts:/var/lib/karstflow/accounts
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
     depends_on:
       validator-1:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - karstflow-cluster
+
+volumes:
+  node1-ledger:
+  node1-accounts:
+  node2-ledger:
+  node2-accounts:
+  node3-ledger:
+  node3-accounts:
+
+networks:
+  karstflow-cluster:
+    driver: bridge

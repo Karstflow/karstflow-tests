@@ -1,26 +1,30 @@
-"""Root fixtures: node, Solana RPC client, funded keypair."""
+"""Root fixtures: config, clients, funded accounts, assertion helpers."""
 
 from __future__ import annotations
-
-import os
 
 import pytest
 import pytest_asyncio
 from solana.rpc.async_api import AsyncClient
 from solders.keypair import Keypair
 
+from karstflow_tests.client import ValidatorClient
+from karstflow_tests.config import TestConfig, load_config
+from karstflow_tests.factories import KeypairFactory, TransactionFactory
 from karstflow_tests.node import NodeHandle, NodeManager
+from karstflow_tests.rpc import RpcClient
 from karstflow_tests.wait import wait_for_confirmation
+from karstflow_tests.ws import WsClient
+
+# ── Configuration ────────────────────────────────────────────────────
 
 
-def _get_rpc_url() -> str:
-    """Resolve RPC URL from env or default."""
-    return os.environ.get("KARSTFLOW_RPC_URL", "http://localhost:8899")
+@pytest.fixture(scope="session")
+def test_config() -> TestConfig:
+    """Provide resolved test configuration."""
+    return load_config()
 
 
-def _get_ws_url() -> str:
-    """Resolve WebSocket URL from env or default."""
-    return os.environ.get("KARSTFLOW_WS_URL", "ws://localhost:8900")
+# ── Node management ──────────────────────────────────────────────────
 
 
 @pytest.fixture(scope="session")
@@ -30,33 +34,97 @@ def node_manager() -> NodeManager:
 
 
 @pytest.fixture(scope="session")
-def node_handle() -> NodeHandle:
+def node_handle(test_config: TestConfig) -> NodeHandle:
     """Provide a handle to the running validator node.
 
-    By default, assumes the node is already running externally.
-    Set KARSTFLOW_AUTO_NODE=1 to start via Docker automatically.
+    Assumes the node is already running externally (via `just node-up`).
     """
     return NodeHandle(
-        rpc_url=_get_rpc_url(),
-        ws_url=_get_ws_url(),
+        rpc_url=test_config.rpc_url,
+        ws_url=test_config.ws_url,
     )
 
 
+# ── Official Solana client ───────────────────────────────────────────
+
+
 @pytest_asyncio.fixture
-async def solana_client(node_handle: NodeHandle) -> AsyncClient:  # type: ignore[misc]
+async def solana_client(test_config: TestConfig) -> AsyncClient:  # type: ignore[misc]
     """Provide the official Solana async RPC client."""
-    client = AsyncClient(node_handle.rpc_url)
+    client = AsyncClient(test_config.rpc_url)
     yield client  # type: ignore[misc]
     await client.close()
 
 
+# ── Raw JSON-RPC client ─────────────────────────────────────────────
+
+
 @pytest_asyncio.fixture
-async def funded_keypair(solana_client: AsyncClient) -> Keypair:
-    """Create and return a funded keypair (10 SOL)."""
+async def rpc_client(test_config: TestConfig) -> RpcClient:  # type: ignore[misc]
+    """Provide raw JSON-RPC client for custom/batch requests."""
+    client = RpcClient(config=test_config)
+    yield client  # type: ignore[misc]
+    await client.close()
+
+
+# ── WebSocket client ─────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def ws_client(test_config: TestConfig) -> WsClient:  # type: ignore[misc]
+    """Provide connected WebSocket client."""
+    client = WsClient(config=test_config)
+    await client.connect()
+    yield client  # type: ignore[misc]
+    await client.close()
+
+
+# ── Unified test client ─────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def test_client(test_config: TestConfig) -> ValidatorClient:  # type: ignore[misc]
+    """Provide the unified test client with all sub-clients."""
+    client = ValidatorClient(config=test_config)
+    yield client  # type: ignore[misc]
+    await client.close()
+
+
+# ── Factories ────────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def keypair_factory(solana_client: AsyncClient) -> KeypairFactory:
+    """Provide keypair factory bound to current client."""
+    return KeypairFactory(solana_client)
+
+
+@pytest_asyncio.fixture
+async def tx_factory(solana_client: AsyncClient) -> TransactionFactory:
+    """Provide transaction factory bound to current client."""
+    return TransactionFactory(solana_client)
+
+
+# ── Funded accounts ──────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def funded_keypair(solana_client: AsyncClient, test_config: TestConfig) -> Keypair:
+    """Create and return a funded keypair (default 10 SOL)."""
     kp = Keypair()
-    resp = await solana_client.request_airdrop(kp.pubkey(), 10_000_000_000)
-    await wait_for_confirmation(
-        str(solana_client._provider.endpoint_uri),
-        str(resp.value),
-    )
+    resp = await solana_client.request_airdrop(kp.pubkey(), test_config.airdrop_lamports)
+    await wait_for_confirmation(test_config.rpc_url, str(resp.value))
     return kp
+
+
+@pytest_asyncio.fixture
+async def funded_keypair_pair(
+    solana_client: AsyncClient, test_config: TestConfig
+) -> tuple[Keypair, Keypair]:
+    """Create two funded keypairs for transfer tests."""
+    kp1, kp2 = Keypair(), Keypair()
+    resp1 = await solana_client.request_airdrop(kp1.pubkey(), test_config.airdrop_lamports)
+    resp2 = await solana_client.request_airdrop(kp2.pubkey(), test_config.airdrop_lamports)
+    await wait_for_confirmation(test_config.rpc_url, str(resp1.value))
+    await wait_for_confirmation(test_config.rpc_url, str(resp2.value))
+    return kp1, kp2
