@@ -12,6 +12,7 @@ from karstflow_tests.assertions import (
     assert_transaction_confirmed,
 )
 from karstflow_tests.client import ValidatorClient
+from karstflow_tests.comparison import ComparisonClient, ComparisonResult, deep_compare
 from karstflow_tests.config import Commitment, RetryPolicy, TestConfig, load_config
 from karstflow_tests.coverage import ALL_RPC_METHODS, MethodCoverage
 from karstflow_tests.factories import (
@@ -22,6 +23,17 @@ from karstflow_tests.factories import (
     lamport_amounts,
     rpc_methods_readonly,
     rpc_methods_with_pubkey_param,
+)
+from karstflow_tests.instrumented_rpc import InstrumentedRpcClient
+from karstflow_tests.lifecycle import ComposeLifecycle, ValidatorConfig, ValidatorLifecycle
+from karstflow_tests.middleware import (
+    CallRecord,
+    ErrorClassifier,
+    MethodStats,
+    MiddlewareChain,
+    RecordingInterceptor,
+    TimingInterceptor,
+    default_middleware,
 )
 from karstflow_tests.node import ClusterHandle, NodeHandle, NodeManager
 from karstflow_tests.programs import (
@@ -37,6 +49,7 @@ from karstflow_tests.request_builder import RequestBuilder, RpcRequestSpec
 from karstflow_tests.rpc import RpcClient
 from karstflow_tests.scenarios import Scenario, ScenarioBuilder, ScenarioContext
 from karstflow_tests.state import StateCapture, StateDiff, ValidatorSnapshot
+from karstflow_tests.suites import TestSuite, get_suite, list_suites, suite_help
 from karstflow_tests.token import (
     burn_tokens,
     close_token_account,
@@ -64,16 +77,26 @@ __all__ = [
     # Types
     "AccountInfo",
     "BlockProduction",
+    "CallRecord",
     # Node management
     "ClusterHandle",
     # Config
     "Commitment",
+    # Comparison
+    "ComparisonClient",
+    "ComparisonResult",
+    "ComposeLifecycle",
     "EpochInfo",
+    "ErrorClassifier",
     # Factories
+    "InstrumentedRpcClient",
     "KeypairFactory",
     "MethodCoverage",
+    "MethodStats",
+    "MiddlewareChain",
     "NodeHandle",
     "NodeManager",
+    "RecordingInterceptor",
     # Request builder
     "RequestBuilder",
     "RetryPolicy",
@@ -91,9 +114,13 @@ __all__ = [
     "StateCapture",
     "StateDiff",
     "TestConfig",
+    "TestSuite",
+    "TimingInterceptor",
     "TransactionFactory",
     # Client
     "ValidatorClient",
+    "ValidatorConfig",
+    "ValidatorLifecycle",
     "ValidatorSnapshot",
     "WsClient",
     "WsError",
@@ -121,16 +148,21 @@ __all__ = [
     "create_nonce_account",
     "create_program_owned_account",
     "create_token_account",
+    "deep_compare",
+    "default_middleware",
     "get_balance_lamports",
+    "get_suite",
     "invalid_pubkey_strings",
     "known_program_ids",
     "lamport_amounts",
+    "list_suites",
     "load_config",
     "mint_to",
     "rpc_methods_readonly",
     "rpc_methods_with_pubkey_param",
     "send_memo",
     "send_multi_instruction_tx",
+    "suite_help",
     "token_transfer",
     "wait_for_confirmation",
     "wait_for_health",

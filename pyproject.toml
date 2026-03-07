@@ -51,6 +51,7 @@ markers = [
     "blocks: Block and slot tests",
     "network: Network and validator info tests",
     "errors: Error handling and edge cases",
+    "comparison: RPC comparison tests against reference node",
 ]
 timeout = 60
 

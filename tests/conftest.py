@@ -8,15 +8,18 @@ from solana.rpc.async_api import AsyncClient
 from solders.keypair import Keypair
 
 from karstflow_tests.client import ValidatorClient
+from karstflow_tests.comparison import ComparisonClient
 from karstflow_tests.config import TestConfig, load_config
 from karstflow_tests.factories import KeypairFactory, TransactionFactory
+from karstflow_tests.instrumented_rpc import InstrumentedRpcClient
+from karstflow_tests.middleware import MiddlewareChain, default_middleware
 from karstflow_tests.node import NodeHandle, NodeManager
 from karstflow_tests.rpc import RpcClient
 from karstflow_tests.state import StateCapture
 from karstflow_tests.wait import wait_for_confirmation
 from karstflow_tests.ws import WsClient
 
-pytest_plugins = ["tests.plugins.rpc_coverage"]
+pytest_plugins = ["tests.plugins.rpc_coverage", "tests.plugins.timing_report"]
 
 # ── Configuration ────────────────────────────────────────────────────
 
@@ -180,3 +183,43 @@ async def funded_keypair_pair(
     await wait_for_confirmation(test_config.rpc_url, str(resp1.value))
     await wait_for_confirmation(test_config.rpc_url, str(resp2.value))
     return kp1, kp2
+
+
+# ── Instrumented RPC client ──────────────────────────────────────────
+
+
+@pytest.fixture(scope="session")
+def session_middleware() -> MiddlewareChain:
+    """Session-scoped middleware chain shared across all instrumented clients."""
+    return default_middleware()
+
+
+@pytest_asyncio.fixture
+async def instrumented_rpc(  # type: ignore[misc]
+    test_config: TestConfig, session_middleware: MiddlewareChain
+) -> InstrumentedRpcClient:
+    """Instrumented RPC client with timing/recording middleware."""
+    client = InstrumentedRpcClient(config=test_config, middleware=session_middleware)
+    yield client  # type: ignore[misc]
+    await client.close()
+
+
+# ── Comparison client ────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def comparison_client(test_config: TestConfig) -> ComparisonClient:  # type: ignore[misc]
+    """Dual-target comparison client.
+
+    Set KARSTFLOW_REFERENCE_URL to the Solana reference node URL.
+    Falls back to the default karstflow URL for both sides (self-comparison).
+    """
+    import os
+
+    reference_url = os.environ.get("KARSTFLOW_REFERENCE_URL", test_config.rpc_url)
+    client = ComparisonClient(
+        reference_url=reference_url,
+        target_url=test_config.rpc_url,
+    )
+    yield client  # type: ignore[misc]
+    await client.close()

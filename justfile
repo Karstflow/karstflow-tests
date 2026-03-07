@@ -29,6 +29,36 @@ load:
 all:
     uv run pytest tests/smoke tests/functional tests/websocket tests/integration -v
 
+# ── Named suites ────────────────────────────────────────────────────
+
+# Run quick feedback suite (smoke + basic functional, < 2 min)
+quick:
+    uv run pytest tests/smoke tests/functional/accounts tests/functional/blocks -v --timeout=30
+
+# Run pre-merge gate (smoke + functional + websocket, no cluster)
+pre-merge:
+    uv run pytest tests/smoke tests/functional tests/websocket -v --timing-report
+
+# Run full suite with coverage and timing reports
+full:
+    uv run pytest tests/smoke tests/functional tests/websocket tests/integration -v --rpc-coverage --timing-report --timeout=120
+
+# Run RPC compatibility suite with coverage report
+rpc-compat:
+    uv run pytest tests/functional -v --rpc-coverage --timing-report
+
+# Run token lifecycle suite
+token-lifecycle:
+    uv run pytest tests/functional/programs/test_token_program.py tests/functional/programs/test_token_lifecycle.py tests/functional/programs/test_token_advanced.py tests/functional/accounts/test_token_queries.py -v
+
+# Run transaction lifecycle suite
+tx-lifecycle:
+    uv run pytest tests/functional/transactions/test_send_transaction.py tests/functional/transactions/test_transfer.py tests/functional/transactions/test_get_transaction.py tests/functional/transactions/test_transaction_lifecycle.py tests/functional/transactions/test_commitment_lifecycle.py -v
+
+# List available test suites
+suites:
+    @uv run python -c "from karstflow_tests.suites import suite_help; print(suite_help())"
+
 # ── Test groups (functional subsets) ─────────────────────────────────
 
 # Run account tests (getBalance, getAccountInfo, airdrop, etc.)
@@ -89,6 +119,32 @@ test-file FILE:
 test-mark MARKER:
     uv run pytest -v -m "{{MARKER}}"
 
+# Run with timing report
+test-timed *ARGS:
+    uv run pytest -v --timing-report {{ARGS}}
+
+# Run with RPC coverage report
+test-coverage *ARGS:
+    uv run pytest -v --rpc-coverage {{ARGS}}
+
+# Run with both reports
+test-full-report *ARGS:
+    uv run pytest -v --rpc-coverage --timing-report {{ARGS}}
+
+# ── Comparison testing ──────────────────────────────────────────────
+
+# Run comparison tests against Solana reference (set KARSTFLOW_REFERENCE_URL)
+compare *ARGS:
+    uv run pytest tests/comparison -v {{ARGS}}
+
+# Run basic RPC comparison against reference
+compare-basic:
+    uv run pytest tests/comparison/test_rpc_compat.py -v
+
+# Run structural comparison (response shapes only)
+compare-structure:
+    uv run pytest tests/comparison/test_response_structure.py -v
+
 # ── Quality ──────────────────────────────────────────────────────────
 
 # Run ruff linter
@@ -140,6 +196,7 @@ test-stats:
     echo "errors:       $(uv run pytest tests/functional/errors --co -q 2>/dev/null | tail -1)" && \
     echo "programs:     $(uv run pytest tests/functional/programs --co -q 2>/dev/null | tail -1)" && \
     echo "websocket:    $(uv run pytest tests/websocket --co -q 2>/dev/null | tail -1)" && \
+    echo "comparison:   $(uv run pytest tests/comparison --co -q 2>/dev/null | tail -1)" && \
     echo "==========================" && \
     echo "TOTAL:        $(uv run pytest --co -q 2>/dev/null | tail -1)"
 
@@ -160,6 +217,9 @@ node-logs:
 # Restart single node (clean state)
 node-restart:
     docker compose -f docker-compose.single.yml down -v && docker compose -f docker-compose.single.yml up -d
+
+# Build and start (clean rebuild + start)
+node-fresh: build-image node-restart
 
 # ── Docker: cluster ─────────────────────────────────────────────────
 
@@ -198,3 +258,11 @@ build-image:
 # Sync Python dependencies
 sync:
     uv sync
+
+# ── Workflows ────────────────────────────────────────────────────────
+
+# Full CI workflow: lint + typecheck + node-up + smoke + node-down
+ci-e2e: ci node-up
+    @echo "Waiting for node to be ready..." && sleep 5
+    uv run pytest tests/smoke -v -m smoke || (just node-down && exit 1)
+    just node-down
