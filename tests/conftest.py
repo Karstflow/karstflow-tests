@@ -1,4 +1,4 @@
-"""Root fixtures: node manager, RPC client, funded keypair."""
+"""Root fixtures: node, Solana RPC client, funded keypair."""
 
 from __future__ import annotations
 
@@ -6,10 +6,11 @@ import os
 
 import pytest
 import pytest_asyncio
+from solana.rpc.async_api import AsyncClient
+from solders.keypair import Keypair
 
-from karstflow_tests.accounts import create_funded_keypair
 from karstflow_tests.node import NodeHandle, NodeManager
-from karstflow_tests.rpc import RpcClient
+from karstflow_tests.wait import wait_for_confirmation
 
 
 def _get_rpc_url() -> str:
@@ -23,7 +24,7 @@ def _get_ws_url() -> str:
 
 
 @pytest.fixture(scope="session")
-def node_manager():
+def node_manager() -> NodeManager:
     """Provide a NodeManager instance."""
     return NodeManager()
 
@@ -42,14 +43,20 @@ def node_handle() -> NodeHandle:
 
 
 @pytest_asyncio.fixture
-async def rpc_client(node_handle: NodeHandle):
-    """Provide an async RPC client connected to the validator."""
-    client = RpcClient(node_handle.rpc_url)
-    yield client
+async def solana_client(node_handle: NodeHandle) -> AsyncClient:  # type: ignore[misc]
+    """Provide the official Solana async RPC client."""
+    client = AsyncClient(node_handle.rpc_url)
+    yield client  # type: ignore[misc]
     await client.close()
 
 
 @pytest_asyncio.fixture
-async def funded_keypair(rpc_client: RpcClient):
+async def funded_keypair(solana_client: AsyncClient) -> Keypair:
     """Create and return a funded keypair (10 SOL)."""
-    return await create_funded_keypair(rpc_client)
+    kp = Keypair()
+    resp = await solana_client.request_airdrop(kp.pubkey(), 10_000_000_000)
+    await wait_for_confirmation(
+        str(solana_client._provider.endpoint_uri),
+        str(resp.value),
+    )
+    return kp

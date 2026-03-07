@@ -2,27 +2,23 @@
 
 from __future__ import annotations
 
-import base64
-
-from solders.hash import Hash
+from solana.rpc.async_api import AsyncClient
 from solders.keypair import Keypair
 from solders.message import Message
 from solders.pubkey import Pubkey
 from solders.system_program import TransferParams, transfer
 from solders.transaction import Transaction
 
-from karstflow_tests.rpc import RpcClient
 
-
-async def build_transfer(
-    rpc: RpcClient,
+async def build_and_send_transfer(
+    client: AsyncClient,
     sender: Keypair,
     recipient: Pubkey,
     lamports: int,
 ) -> str:
-    """Build and sign a SOL transfer transaction. Returns base64-encoded tx."""
-    blockhash_resp = await rpc.request("getLatestBlockhash")
-    blockhash = Hash.from_string(blockhash_resp["value"]["blockhash"])
+    """Build, sign, and send a SOL transfer. Returns signature string."""
+    blockhash_resp = await client.get_latest_blockhash()
+    blockhash = blockhash_resp.value.blockhash
 
     ix = transfer(
         TransferParams(
@@ -35,4 +31,5 @@ async def build_transfer(
     tx = Transaction.new_unsigned(msg)
     tx.sign([sender], blockhash)
 
-    return base64.b64encode(bytes(tx)).decode("ascii")
+    resp = await client.send_transaction(tx)
+    return str(resp.value)

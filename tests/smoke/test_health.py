@@ -1,14 +1,14 @@
 """Smoke tests: getHealth, getVersion."""
 
-from karstflow_tests.rpc import RpcClient
+from solana.rpc.async_api import AsyncClient
 
 
-async def test_get_health(rpc_client: RpcClient):
-    result = await rpc_client.get_health()
-    assert result == "ok"
+async def test_get_health(solana_client: AsyncClient) -> None:
+    result = await solana_client.get_health()
+    assert result.value == "ok"
 
 
-async def test_get_version(rpc_client: RpcClient):
-    result = await rpc_client.get_version()
-    assert "solana-core" in result
-    assert isinstance(result["solana-core"], str)
+async def test_get_version(solana_client: AsyncClient) -> None:
+    result = await solana_client.get_version()
+    assert result.value is not None
+    assert "solana-core" in result.value
