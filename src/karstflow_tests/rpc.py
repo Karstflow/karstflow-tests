@@ -413,3 +413,30 @@ class RpcClient:
 
     async def get_slot_leaders(self, start_slot: int, limit: int) -> list[str]:
         return await self.request("getSlotLeaders", [start_slot, limit])
+
+    async def get_token_accounts_by_delegate(
+        self,
+        delegate: str,
+        *,
+        mint: str | None = None,
+        program_id: str | None = None,
+        encoding: str = "base64",
+    ) -> dict[str, Any]:
+        filter_param: dict[str, str] = {}
+        if mint:
+            filter_param["mint"] = mint
+        elif program_id:
+            filter_param["programId"] = program_id
+        return await self.request(
+            "getTokenAccountsByDelegate",
+            [delegate, filter_param, {"encoding": encoding}],
+        )
+
+    async def get_token_largest_accounts(self, mint: str) -> dict[str, Any]:
+        return await self.request("getTokenLargestAccounts", [mint])
+
+    async def is_blockhash_valid(
+        self, blockhash: str, commitment: Commitment | None = None
+    ) -> dict[str, Any]:
+        c = commitment or self.commitment
+        return await self.request("isBlockhashValid", [blockhash, {"commitment": c.value}])
