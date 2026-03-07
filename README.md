@@ -2,7 +2,7 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
-**325 tests** across 9 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, and edge cases.
+**350 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, stress/robustness, multi-node integration, and load testing.
 
 ## Prerequisites
 
@@ -55,10 +55,12 @@ Run specific functional test groups:
 | Blocks | `just test-blocks` | 25 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount |
 | Network | `just test-network` | 26 | supply, inflation, rent, performance, prioritization fees, slot leaders |
 | Cluster Info | `just test-cluster-info` | 10 | clusterNodes, leaderSchedule, voteAccounts |
-| Errors | `just test-errors` | 29 | invalid params, unknown methods, edge cases, concurrent ops, batch limits |
+| Errors | `just test-errors` | 40 | invalid params, unknown methods, edge cases, concurrent ops, batch limits, stress tests |
 | Programs | `just test-programs` | 121 | native programs, sysvars, SPL token lifecycle, memo, compute budget, vote, stake |
 | WebSocket | `just websocket` | 16 | slot, logs, account, root, signature, program subscriptions |
 | Smoke | `just smoke` | 8 | health, version, genesis, batch |
+| Integration | `just integration` | 9 | multi-node cluster: genesis hash, slot convergence, cross-node state, leader schedule |
+| Load | `just load` | 6 | throughput benchmarks: getSlot, getHealth, getVersion, batch, getBalance, mixed reads |
 
 Additional targeted commands:
 
@@ -70,6 +72,11 @@ just test-k "memo"     # Run tests matching keyword
 just test-mark slow    # Run tests with specific marker
 just test-file tests/functional/programs/test_vote_program.py
 just test-stats        # Show test distribution per group
+
+# Load testing with Locust
+just locust            # Web UI at http://localhost:8089
+just locust-headless   # 10 users, 2/s spawn, 60s duration
+just locust-headless 50 5 120s  # Custom: 50 users, 5/s spawn, 120s
 ```
 
 ## Project Structure
@@ -108,7 +115,7 @@ karstflow-tests/
 │   │   ├── blocks/             # Block and slot tests (25 tests)
 │   │   ├── cluster_info/       # Cluster info tests (10 tests)
 │   │   ├── network/            # Network info tests (26 tests)
-│   │   ├── errors/             # Error handling + edge cases (29 tests)
+│   │   ├── errors/             # Error handling + edge cases + stress (40 tests)
 │   │   └── programs/           # Program tests (121 tests)
 │   │       ├── test_native_programs.py     # 9 native + 2 SPL + 2 precompile
 │   │       ├── test_sysvars.py             # 8 sysvar accounts
@@ -125,8 +132,8 @@ karstflow-tests/
 │   │       ├── test_token_program.py       # Token program existence
 │   │       └── test_address_lookup_table.py # ALT program
 │   ├── websocket/              # WebSocket subscription tests (16 tests)
-│   ├── integration/            # Multi-node cluster tests
-│   └── load/                   # Locust load tests + benchmarks
+│   ├── integration/            # Multi-node cluster tests (9 tests)
+│   └── load/                   # Locust load tests + throughput benchmarks (6 tests)
 │
 └── fixtures/                   # Static test data
 ```

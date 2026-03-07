@@ -179,6 +179,16 @@ cluster-logs:
 cluster-restart:
     docker compose down -v && docker compose up -d
 
+# ── Load testing ─────────────────────────────────────────────────────
+
+# Run Locust web UI (open http://localhost:8089)
+locust:
+    uv run locust -f tests/load/locustfile.py --host http://localhost:8899
+
+# Run Locust headless: 10 users, 2/s spawn rate, 60s duration
+locust-headless USERS="10" RATE="2" TIME="60s":
+    uv run locust -f tests/load/locustfile.py --host http://localhost:8899 --headless -u {{USERS}} -r {{RATE}} -t {{TIME}}
+
 # ── Build ────────────────────────────────────────────────────────────
 
 # Build validator Docker image
