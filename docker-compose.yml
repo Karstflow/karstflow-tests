@@ -1,11 +1,11 @@
 services:
   validator-1:
-    image: karstflow:latest
+    image: karstflow-validator:latest
     container_name: karstflow-node-1
     ports:
       - "8899:8899"   # JSON-RPC
       - "8900:8900"   # WebSocket
-    command: ["--config", "/etc/karstflow/config.toml", "--dev"]
+    command: ["--config", "/etc/karstflow/config.toml"]
     environment:
       RUST_LOG: "info"
       RUST_BACKTRACE: "1"
@@ -33,7 +33,7 @@ services:
       - karstflow-cluster
 
   validator-2:
-    image: karstflow:latest
+    image: karstflow-validator:latest
     container_name: karstflow-node-2
     ports:
       - "8999:8899"   # JSON-RPC
@@ -69,7 +69,7 @@ services:
       - karstflow-cluster
 
   validator-3:
-    image: karstflow:latest
+    image: karstflow-validator:latest
     container_name: karstflow-node-3
     ports:
       - "9099:8899"   # JSON-RPC
