@@ -2,7 +2,7 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
-**380 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, stress/robustness, multi-node integration, load testing, and advanced test tooling (request builder, scenario runner, state capture).
+**433 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, commitment levels, encoding formats, blockhash validity, stress/robustness, multi-node integration, load testing, and advanced test tooling.
 
 ## Prerequisites
 
@@ -50,14 +50,14 @@ Run specific functional test groups:
 
 | Group | Command | Tests | Coverage |
 |---|---|---|---|
-| Accounts | `just test-accounts` | 58 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts, request builder, state capture |
-| Transactions | `just test-transactions` | 35 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce, scenarios |
-| Blocks | `just test-blocks` | 25 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount |
+| Accounts | `just test-accounts` | 66 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts, encoding, request builder, state capture |
+| Transactions | `just test-transactions` | 41 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce, scenarios, commitment lifecycle |
+| Blocks | `just test-blocks` | 45 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount, commitment levels, blockhash validity |
 | Network | `just test-network` | 26 | supply, inflation, rent, performance, prioritization fees, slot leaders |
 | Cluster Info | `just test-cluster-info` | 10 | clusterNodes, leaderSchedule, voteAccounts |
 | Errors | `just test-errors` | 40 | invalid params, unknown methods, edge cases, concurrent ops, batch limits, stress tests |
-| Programs | `just test-programs` | 121 | native programs, sysvars, SPL token lifecycle, memo, compute budget, vote, stake |
-| WebSocket | `just websocket` | 16 | slot, logs, account, root, signature, program subscriptions |
+| Programs | `just test-programs` | 129 | native programs, sysvars, SPL token lifecycle + advanced, memo, compute budget, vote, stake |
+| WebSocket | `just websocket` | 27 | slot, logs, account, root, signature, program subscriptions, advanced patterns |
 | Smoke | `just smoke` | 8 | health, version, genesis, batch |
 | Integration | `just integration` | 18 | multi-node cluster: genesis hash, slot convergence, cross-node state, transactions, consistency |
 | Load | `just load` | 6 | throughput benchmarks: getSlot, getHealth, getVersion, batch, getBalance, mixed reads |
