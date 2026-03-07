@@ -2,6 +2,8 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
+**325 tests** across 9 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, and edge cases.
+
 ## Prerequisites
 
 - Python 3.11+
@@ -24,6 +26,9 @@ just node-up
 # Run smoke tests
 just smoke
 
+# Run all functional tests
+just functional
+
 # Stop the node
 just node-down
 ```
@@ -39,34 +44,91 @@ just node-down
 | Load | `just load` | Performance and throughput tests |
 | All | `just all` | Everything except load tests |
 
+## Test Groups
+
+Run specific functional test groups:
+
+| Group | Command | Tests | Coverage |
+|---|---|---|---|
+| Accounts | `just test-accounts` | 42 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts |
+| Transactions | `just test-transactions` | 30 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce |
+| Blocks | `just test-blocks` | 25 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount |
+| Network | `just test-network` | 26 | supply, inflation, rent, performance, prioritization fees, slot leaders |
+| Cluster Info | `just test-cluster-info` | 10 | clusterNodes, leaderSchedule, voteAccounts |
+| Errors | `just test-errors` | 29 | invalid params, unknown methods, edge cases, concurrent ops, batch limits |
+| Programs | `just test-programs` | 121 | native programs, sysvars, SPL token lifecycle, memo, compute budget, vote, stake |
+| WebSocket | `just websocket` | 16 | slot, logs, account, root, signature, program subscriptions |
+| Smoke | `just smoke` | 8 | health, version, genesis, batch |
+
+Additional targeted commands:
+
+```bash
+just test-tokens       # SPL Token lifecycle only
+just test-system       # System program tests only
+just test-validator    # Validator behavior tests
+just test-k "memo"     # Run tests matching keyword
+just test-mark slow    # Run tests with specific marker
+just test-file tests/functional/programs/test_vote_program.py
+just test-stats        # Show test distribution per group
+```
+
 ## Project Structure
 
 ```
 karstflow-tests/
 ├── pyproject.toml              # Dependencies and pytest config
-├── justfile                    # Task runner commands
+├── justfile                    # 35+ task runner commands
 ├── docker-compose.yml          # 3-node cluster
 ├── docker-compose.single.yml   # Single node for development
 │
-├── src/karstflow_tests/        # Shared test utilities
-│   ├── rpc.py                  # Typed JSON-RPC client
-│   ├── ws.py                   # WebSocket subscription helper
+├── src/karstflow_tests/        # Shared test utilities (14 modules)
+│   ├── client.py               # ValidatorClient unified facade
+│   ├── rpc.py                  # Typed JSON-RPC client (45+ method wrappers)
+│   ├── ws.py                   # WebSocket client with unsubscribe dispatch
+│   ├── config.py               # TestConfig, Commitment, RetryPolicy
+│   ├── types.py                # RpcResponse, EpochInfo, AccountInfo, SignatureStatus
+│   ├── assertions.py           # 8 domain-specific assertion helpers
+│   ├── factories.py            # KeypairFactory, TransactionFactory, parametrization data
+│   ├── programs.py             # Program helpers: memo, CreateAccount, ComputeBudget, nonce
+│   ├── token.py                # SPL Token lifecycle: mint, transfer, burn, close
+│   ├── accounts.py             # Account creation and balance helpers
+│   ├── transactions.py         # Transaction builder utilities
 │   ├── node.py                 # Node/cluster lifecycle manager
-│   ├── accounts.py             # Keypair/account factories
-│   ├── transactions.py         # Transaction builders
 │   └── wait.py                 # Polling/retry utilities
 │
 ├── tests/
-│   ├── conftest.py             # Root fixtures
-│   ├── smoke/                  # Health and genesis checks
-│   ├── functional/             # RPC method tests
-│   ├── websocket/              # Subscription tests
+│   ├── conftest.py             # Root fixtures (11 fixtures)
+│   ├── helpers/
+│   │   ├── setup.py            # Reusable setup helpers (funded_sender, transfer_pair)
+│   │   └── constants.py        # Centralized test constants and parametrization data
+│   ├── smoke/                  # Health and genesis checks (8 tests)
+│   ├── functional/
+│   │   ├── accounts/           # Account RPC tests (42 tests)
+│   │   ├── transactions/       # Transaction tests (30 tests)
+│   │   ├── blocks/             # Block and slot tests (25 tests)
+│   │   ├── cluster_info/       # Cluster info tests (10 tests)
+│   │   ├── network/            # Network info tests (26 tests)
+│   │   ├── errors/             # Error handling + edge cases (29 tests)
+│   │   └── programs/           # Program tests (121 tests)
+│   │       ├── test_native_programs.py     # 9 native + 2 SPL + 2 precompile
+│   │       ├── test_sysvars.py             # 8 sysvar accounts
+│   │       ├── test_token_lifecycle.py     # Full SPL Token lifecycle
+│   │       ├── test_memo.py               # Memo program execution
+│   │       ├── test_compute_budget.py      # ComputeBudget instructions
+│   │       ├── test_system_program.py      # CreateAccount operations
+│   │       ├── test_system_program_deep.py # Transfer edge cases, error conditions
+│   │       ├── test_vote_program.py        # Vote accounts inspection
+│   │       ├── test_stake_program.py       # Stake queries
+│   │       ├── test_validator_behavior.py  # Slot progression, fees, leader schedule
+│   │       ├── test_config_program.py      # Config program
+│   │       ├── test_bpf_loader.py          # BPF Loader accounts
+│   │       ├── test_token_program.py       # Token program existence
+│   │       └── test_address_lookup_table.py # ALT program
+│   ├── websocket/              # WebSocket subscription tests (16 tests)
 │   ├── integration/            # Multi-node cluster tests
 │   └── load/                   # Locust load tests + benchmarks
 │
 └── fixtures/                   # Static test data
-    ├── programs/               # Pre-compiled BPF programs
-    └── accounts/               # Serialized account snapshots
 ```
 
 ## Configuration
@@ -112,16 +174,22 @@ just fmt
 # Type check
 just typecheck
 
-# Full CI check
+# Full CI check (lint + format + typecheck)
 just ci
+
+# Collect tests and show count
+just collect
+
+# Show test distribution per group
+just test-stats
 ```
 
 ## Tech Stack
 
-- **pytest** — test framework with async support
+- **pytest** — test framework with async support (pytest-asyncio)
 - **httpx** — async HTTP client for JSON-RPC
 - **websockets** — WebSocket client for subscriptions
-- **solana-py** + **solders** — official Solana Python client
+- **solana-py** + **solders** — official Solana Python client (primary SDK)
 - **Locust** — load testing framework
 - **pytest-benchmark** — microbenchmark harness
 - **ruff** — linter (16 rule groups) + formatter

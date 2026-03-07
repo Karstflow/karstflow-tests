@@ -29,6 +29,50 @@ load:
 all:
     uv run pytest tests/smoke tests/functional tests/websocket tests/integration -v
 
+# ── Test groups (functional subsets) ─────────────────────────────────
+
+# Run account tests (getBalance, getAccountInfo, airdrop, etc.)
+test-accounts:
+    uv run pytest tests/functional/accounts -v
+
+# Run transaction tests (transfer, simulate, signatures, lifecycle)
+test-transactions:
+    uv run pytest tests/functional/transactions -v
+
+# Run block tests (getBlock, slot, epoch, blockhash, block production)
+test-blocks:
+    uv run pytest tests/functional/blocks -v
+
+# Run network tests (supply, inflation, rent, performance, fees)
+test-network:
+    uv run pytest tests/functional/network -v
+
+# Run cluster info tests (nodes, leader schedule, vote accounts)
+test-cluster-info:
+    uv run pytest tests/functional/cluster_info -v
+
+# Run error/edge case tests (invalid params, unknown methods, boundaries)
+test-errors:
+    uv run pytest tests/functional/errors -v
+
+# Run program tests (native programs, sysvars, token, memo, compute budget)
+test-programs:
+    uv run pytest tests/functional/programs -v -m programs
+
+# Run token lifecycle tests only
+test-tokens:
+    uv run pytest tests/functional/programs/test_token_lifecycle.py -v
+
+# Run system program tests only
+test-system:
+    uv run pytest tests/functional/programs/test_system_program.py tests/functional/programs/test_system_program_deep.py -v
+
+# Run validator behavior tests
+test-validator:
+    uv run pytest tests/functional/programs/test_validator_behavior.py -v
+
+# ── Test utilities ───────────────────────────────────────────────────
+
 # Run specific test by keyword
 test-k KEYWORD:
     uv run pytest -v -k "{{KEYWORD}}"
@@ -36,6 +80,14 @@ test-k KEYWORD:
 # Run with verbose output and no capture
 test-debug *ARGS:
     uv run pytest -v -s --tb=long {{ARGS}}
+
+# Run a specific test file
+test-file FILE:
+    uv run pytest {{FILE}} -v
+
+# Run tests matching a marker
+test-mark MARKER:
+    uv run pytest -v -m "{{MARKER}}"
 
 # ── Quality ──────────────────────────────────────────────────────────
 
@@ -64,9 +116,9 @@ fix:
 
 # ── Discovery ────────────────────────────────────────────────────────
 
-# Collect tests without running
+# Collect tests without running (show count)
 collect:
-    uv run pytest --co
+    uv run pytest --co -q
 
 # Show test markers
 markers:
@@ -75,6 +127,21 @@ markers:
 # List available fixtures
 fixtures:
     uv run pytest --fixtures -q
+
+# Show test count per directory
+test-stats:
+    @echo "=== Test Distribution ===" && \
+    echo "smoke:        $(uv run pytest tests/smoke --co -q 2>/dev/null | tail -1)" && \
+    echo "accounts:     $(uv run pytest tests/functional/accounts --co -q 2>/dev/null | tail -1)" && \
+    echo "transactions: $(uv run pytest tests/functional/transactions --co -q 2>/dev/null | tail -1)" && \
+    echo "blocks:       $(uv run pytest tests/functional/blocks --co -q 2>/dev/null | tail -1)" && \
+    echo "cluster_info: $(uv run pytest tests/functional/cluster_info --co -q 2>/dev/null | tail -1)" && \
+    echo "network:      $(uv run pytest tests/functional/network --co -q 2>/dev/null | tail -1)" && \
+    echo "errors:       $(uv run pytest tests/functional/errors --co -q 2>/dev/null | tail -1)" && \
+    echo "programs:     $(uv run pytest tests/functional/programs --co -q 2>/dev/null | tail -1)" && \
+    echo "websocket:    $(uv run pytest tests/websocket --co -q 2>/dev/null | tail -1)" && \
+    echo "==========================" && \
+    echo "TOTAL:        $(uv run pytest --co -q 2>/dev/null | tail -1)"
 
 # ── Docker: single node ─────────────────────────────────────────────
 

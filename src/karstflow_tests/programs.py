@@ -195,12 +195,12 @@ async def create_nonce_account(
         accounts=[
             AccountMeta(pubkey=nonce_account.pubkey(), is_signer=False, is_writable=True),
             AccountMeta(
-                pubkey=Pubkey.from_string("SysvarRecentB1telekenHashes11111111111111"),
+                pubkey=Pubkey.from_string("SysvarRecentB1ockHashes11111111111111111111"),
                 is_signer=False,
                 is_writable=False,
             ),
             AccountMeta(
-                pubkey=Pubkey.from_string("SysvarRent111111111111111111111111111111"),
+                pubkey=Pubkey.from_string("SysvarRent111111111111111111111111111111111"),
                 is_signer=False,
                 is_writable=False,
             ),

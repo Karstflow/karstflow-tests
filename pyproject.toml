@@ -45,6 +45,12 @@ markers = [
     "integration: Multi-node cluster tests",
     "load: Performance and load tests",
     "slow: Tests that take > 30s",
+    "programs: Native program and SPL token tests",
+    "accounts: Account-related RPC tests",
+    "transactions: Transaction-related tests",
+    "blocks: Block and slot tests",
+    "network: Network and validator info tests",
+    "errors: Error handling and edge cases",
 ]
 timeout = 60
 

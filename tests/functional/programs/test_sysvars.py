@@ -22,7 +22,7 @@ SYSVARS = [
     ("slot_history", "SysvarS1otHistory11111111111111111111111111"),
     ("stake_history", "SysvarStakeHistory1111111111111111111111111"),
     ("instructions", "Sysvar1nstructions1111111111111111111111111"),
-    ("recent_blockhashes", "SysvarRecentB1telekenHashes11111111111111"),
+    ("recent_blockhashes", "SysvarRecentB1ockHashes11111111111111111111"),
 ]
 
 SYSVAR_IDS = [name for name, _ in SYSVARS]
