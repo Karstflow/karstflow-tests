@@ -13,6 +13,7 @@ from karstflow_tests.assertions import (
 )
 from karstflow_tests.client import ValidatorClient
 from karstflow_tests.config import Commitment, RetryPolicy, TestConfig, load_config
+from karstflow_tests.coverage import ALL_RPC_METHODS, MethodCoverage
 from karstflow_tests.factories import (
     KeypairFactory,
     TransactionFactory,
@@ -32,7 +33,10 @@ from karstflow_tests.programs import (
     send_memo,
     send_multi_instruction_tx,
 )
+from karstflow_tests.request_builder import RequestBuilder, RpcRequestSpec
 from karstflow_tests.rpc import RpcClient
+from karstflow_tests.scenarios import Scenario, ScenarioBuilder, ScenarioContext
+from karstflow_tests.state import StateCapture, StateDiff, ValidatorSnapshot
 from karstflow_tests.token import (
     burn_tokens,
     close_token_account,
@@ -55,6 +59,8 @@ from karstflow_tests.wait import wait_for_confirmation, wait_for_health
 from karstflow_tests.ws import WsClient, WsError, WsSubscription
 
 __all__ = [
+    # Coverage
+    "ALL_RPC_METHODS",
     # Types
     "AccountInfo",
     "BlockProduction",
@@ -65,18 +71,30 @@ __all__ = [
     "EpochInfo",
     # Factories
     "KeypairFactory",
+    "MethodCoverage",
     "NodeHandle",
     "NodeManager",
+    # Request builder
+    "RequestBuilder",
     "RetryPolicy",
     "RpcCallError",
     "RpcClient",
     "RpcErrorData",
+    "RpcRequestSpec",
     "RpcResponse",
+    # Scenarios
+    "Scenario",
+    "ScenarioBuilder",
+    "ScenarioContext",
     "SignatureStatus",
+    # State capture
+    "StateCapture",
+    "StateDiff",
     "TestConfig",
     "TransactionFactory",
     # Client
     "ValidatorClient",
+    "ValidatorSnapshot",
     "WsClient",
     "WsError",
     "WsSubscription",

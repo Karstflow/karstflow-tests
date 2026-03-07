@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from karstflow_tests.config import Commitment, RetryPolicy, TestConfig
+from karstflow_tests.request_builder import RpcRequestSpec
 from karstflow_tests.types import RpcErrorData, RpcResponse
 
 
@@ -149,6 +150,21 @@ class RpcClient:
             result=data.get("result"),
             error=error,
         )
+
+    # ── RequestBuilder integration ───────────────────────────────────
+
+    async def execute(self, spec: RpcRequestSpec) -> Any:
+        """Execute a request built with RequestBuilder."""
+        return await self.request(spec.method, spec.params)
+
+    async def execute_raw(self, spec: RpcRequestSpec) -> RpcResponse:
+        """Execute a request built with RequestBuilder, return full response."""
+        return await self.request_raw(spec.method, spec.params)
+
+    async def execute_batch(self, specs: list[RpcRequestSpec]) -> list[RpcResponse]:
+        """Execute multiple RequestBuilder specs as a batch."""
+        requests = [(s.method, s.params) for s in specs]
+        return await self.batch(requests)
 
     # ── Convenience wrappers ─────────────────────────────────────────
 

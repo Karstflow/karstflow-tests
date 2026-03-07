@@ -2,7 +2,7 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
-**350 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, stress/robustness, multi-node integration, and load testing.
+**380 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, stress/robustness, multi-node integration, load testing, and advanced test tooling (request builder, scenario runner, state capture).
 
 ## Prerequisites
 
@@ -50,8 +50,8 @@ Run specific functional test groups:
 
 | Group | Command | Tests | Coverage |
 |---|---|---|---|
-| Accounts | `just test-accounts` | 42 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts |
-| Transactions | `just test-transactions` | 30 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce |
+| Accounts | `just test-accounts` | 58 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts, request builder, state capture |
+| Transactions | `just test-transactions` | 35 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce, scenarios |
 | Blocks | `just test-blocks` | 25 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount |
 | Network | `just test-network` | 26 | supply, inflation, rent, performance, prioritization fees, slot leaders |
 | Cluster Info | `just test-cluster-info` | 10 | clusterNodes, leaderSchedule, voteAccounts |
@@ -59,7 +59,7 @@ Run specific functional test groups:
 | Programs | `just test-programs` | 121 | native programs, sysvars, SPL token lifecycle, memo, compute budget, vote, stake |
 | WebSocket | `just websocket` | 16 | slot, logs, account, root, signature, program subscriptions |
 | Smoke | `just smoke` | 8 | health, version, genesis, batch |
-| Integration | `just integration` | 9 | multi-node cluster: genesis hash, slot convergence, cross-node state, leader schedule |
+| Integration | `just integration` | 18 | multi-node cluster: genesis hash, slot convergence, cross-node state, transactions, consistency |
 | Load | `just load` | 6 | throughput benchmarks: getSlot, getHealth, getVersion, batch, getBalance, mixed reads |
 
 Additional targeted commands:
@@ -77,6 +77,9 @@ just test-stats        # Show test distribution per group
 just locust            # Web UI at http://localhost:8089
 just locust-headless   # 10 users, 2/s spawn, 60s duration
 just locust-headless 50 5 120s  # Custom: 50 users, 5/s spawn, 120s
+
+# RPC method coverage report
+uv run pytest tests/smoke -v --rpc-coverage
 ```
 
 ## Project Structure
@@ -88,14 +91,18 @@ karstflow-tests/
 ├── docker-compose.yml          # 3-node cluster
 ├── docker-compose.single.yml   # Single node for development
 │
-├── src/karstflow_tests/        # Shared test utilities (14 modules)
+├── src/karstflow_tests/        # Shared test utilities (18 modules)
 │   ├── client.py               # ValidatorClient unified facade
-│   ├── rpc.py                  # Typed JSON-RPC client (45+ method wrappers)
+│   ├── rpc.py                  # Typed JSON-RPC client (45+ method wrappers, RequestBuilder exec)
 │   ├── ws.py                   # WebSocket client with unsubscribe dispatch
 │   ├── config.py               # TestConfig, Commitment, RetryPolicy
 │   ├── types.py                # RpcResponse, EpochInfo, AccountInfo, SignatureStatus
 │   ├── assertions.py           # 8 domain-specific assertion helpers
 │   ├── factories.py            # KeypairFactory, TransactionFactory, parametrization data
+│   ├── request_builder.py      # Fluent RequestBuilder for custom RPC requests
+│   ├── scenarios.py            # ScenarioBuilder for multi-step test orchestration
+│   ├── state.py                # StateCapture, ValidatorSnapshot, StateDiff
+│   ├── coverage.py             # RPC method coverage tracking (56 methods)
 │   ├── programs.py             # Program helpers: memo, CreateAccount, ComputeBudget, nonce
 │   ├── token.py                # SPL Token lifecycle: mint, transfer, burn, close
 │   ├── accounts.py             # Account creation and balance helpers
@@ -132,8 +139,9 @@ karstflow-tests/
 │   │       ├── test_token_program.py       # Token program existence
 │   │       └── test_address_lookup_table.py # ALT program
 │   ├── websocket/              # WebSocket subscription tests (16 tests)
-│   ├── integration/            # Multi-node cluster tests (9 tests)
-│   └── load/                   # Locust load tests + throughput benchmarks (6 tests)
+│   ├── integration/            # Multi-node cluster tests (18 tests)
+│   ├── load/                   # Locust load tests + throughput benchmarks (6 tests)
+│   └── plugins/                # Pytest plugins (RPC coverage reporting)
 │
 └── fixtures/                   # Static test data
 ```

@@ -12,8 +12,11 @@ from karstflow_tests.config import TestConfig, load_config
 from karstflow_tests.factories import KeypairFactory, TransactionFactory
 from karstflow_tests.node import NodeHandle, NodeManager
 from karstflow_tests.rpc import RpcClient
+from karstflow_tests.state import StateCapture
 from karstflow_tests.wait import wait_for_confirmation
 from karstflow_tests.ws import WsClient
+
+pytest_plugins = ["tests.plugins.rpc_coverage"]
 
 # ── Configuration ────────────────────────────────────────────────────
 
@@ -88,6 +91,55 @@ async def test_client(test_config: TestConfig) -> ValidatorClient:  # type: igno
     client = ValidatorClient(config=test_config)
     yield client  # type: ignore[misc]
     await client.close()
+
+
+# ── Cluster clients ──────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def cluster_clients(test_config: TestConfig) -> list[ValidatorClient]:  # type: ignore[misc]
+    """Provide ValidatorClient instances for each node in a 3-node cluster.
+
+    Expects KARSTFLOW_CLUSTER_URLS env var with comma-separated RPC URLs,
+    falling back to default ports 8899, 8900, 8901.
+    """
+    import os
+
+    urls_str = os.environ.get(
+        "KARSTFLOW_CLUSTER_URLS",
+        "http://localhost:8899,http://localhost:8909,http://localhost:8919",
+    )
+    urls = [u.strip() for u in urls_str.split(",")]
+
+    clients = []
+    for url in urls:
+        cfg = TestConfig(rpc_url=url)
+        clients.append(ValidatorClient(config=cfg))
+
+    yield clients  # type: ignore[misc]
+
+    for c in clients:
+        await c.close()
+
+
+# ── Raw RPC alias ────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def raw_rpc(test_config: TestConfig) -> RpcClient:  # type: ignore[misc]
+    """Alias for rpc_client — used in load and stress tests."""
+    client = RpcClient(config=test_config)
+    yield client  # type: ignore[misc]
+    await client.close()
+
+
+# ── State capture ────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def state_capture(solana_client: AsyncClient, rpc_client: RpcClient) -> StateCapture:
+    """Provide a StateCapture instance for before/after comparisons."""
+    return StateCapture(solana_client, rpc_client)
 
 
 # ── Factories ────────────────────────────────────────────────────────
