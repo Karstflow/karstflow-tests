@@ -7,7 +7,7 @@ services:
       - "8900:8900"   # WebSocket
       - "8001:8001"   # Gossip
       - "8000:8000"   # TPU
-    command: ["--config", "/etc/karstflow/config.toml", "--dev"]
+    command: ["--config", "/etc/karstflow/config.toml"]
     environment:
       RUST_LOG: "info"
       RUST_BACKTRACE: "1"
