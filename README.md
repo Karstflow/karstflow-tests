@@ -2,7 +2,7 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
-**472 tests** across 11 test groups with **100% RPC method coverage** (54/54 Solana JSON-RPC methods). Covers system programs, SPL token lifecycle, WebSocket subscriptions, commitment levels, encoding formats, versioned transactions, simulation errors, stress/robustness, multi-node integration, load testing, and advanced test tooling.
+**546 tests** across 11 test groups with **100% RPC method coverage** (54/54 Solana JSON-RPC methods). Covers system programs, SPL token lifecycle, WebSocket subscriptions, commitment levels, encoding formats, versioned transactions, simulation errors, nonce accounts, stress/robustness, concurrent writes, multi-node integration, load testing, and advanced test tooling.
 
 ## Prerequisites
 
