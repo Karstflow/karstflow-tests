@@ -16,7 +16,7 @@ from karstflow_tests.rpc import RpcClient
 
 SYSVARS = [
     ("clock", "SysvarC1ock11111111111111111111111111111111"),
-    ("rent", "SysvarRent111111111111111111111111111111"),
+    ("rent", "SysvarRent111111111111111111111111111111111"),
     ("epoch_schedule", "SysvarEpochSchedu1e111111111111111111111111"),
     ("slot_hashes", "SysvarS1otHashes111111111111111111111111111"),
     ("slot_history", "SysvarS1otHistory11111111111111111111111111"),

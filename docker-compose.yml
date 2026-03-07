@@ -13,7 +13,7 @@ services:
       - node1-ledger:/var/lib/karstflow/ledger
       - node1-accounts:/var/lib/karstflow/accounts
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
+      test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -46,7 +46,7 @@ services:
       - node2-ledger:/var/lib/karstflow/ledger
       - node2-accounts:/var/lib/karstflow/accounts
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
+      test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -82,7 +82,7 @@ services:
       - node3-ledger:/var/lib/karstflow/ledger
       - node3-accounts:/var/lib/karstflow/accounts
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
+      test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "http://localhost:8899", "-d", '{"jsonrpc":"2.0","id":1,"method":"getHealth"}']
       interval: 5s
       timeout: 3s
       retries: 10

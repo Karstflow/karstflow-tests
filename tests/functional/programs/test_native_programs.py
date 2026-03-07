@@ -19,7 +19,7 @@ NATIVE_PROGRAMS = [
     ("config_program", "Config1111111111111111111111111111111111111"),
     ("bpf_loader_v2", "BPFLoader2111111111111111111111111111111111"),
     ("bpf_loader_upgradeable", "BPFLoaderUpgradeab1e11111111111111111111111"),
-    ("compute_budget", "ComputeBudget111111111111111111111111111"),
+    ("compute_budget", "ComputeBudget111111111111111111111111111111"),
     ("address_lookup_table", "AddressLookupTab1e1111111111111111111111111"),
     ("feature_program", "Feature111111111111111111111111111111111111"),
 ]
