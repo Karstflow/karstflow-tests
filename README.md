@@ -124,3 +124,9 @@ just ci
 - **solana-py** + **solders** — official Solana Python client
 - **Locust** — load testing framework
 - **pytest-benchmark** — microbenchmark harness
+- **ruff** — linter (16 rule groups) + formatter
+- **mypy** — strict type checking
+
+## License
+
+Copyright (c) 2025-2026 boogvar. All rights reserved.
