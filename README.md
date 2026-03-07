@@ -2,7 +2,7 @@
 
 End-to-end and load testing suite for the karstflow validator. Tests interact with the validator as a black box via JSON-RPC and WebSocket APIs using the official Solana Python client.
 
-**433 tests** across 11 test groups covering RPC methods, system programs, SPL token lifecycle, WebSocket subscriptions, commitment levels, encoding formats, blockhash validity, stress/robustness, multi-node integration, load testing, and advanced test tooling.
+**472 tests** across 11 test groups with **100% RPC method coverage** (54/54 Solana JSON-RPC methods). Covers system programs, SPL token lifecycle, WebSocket subscriptions, commitment levels, encoding formats, versioned transactions, simulation errors, stress/robustness, multi-node integration, load testing, and advanced test tooling.
 
 ## Prerequisites
 
@@ -50,12 +50,12 @@ Run specific functional test groups:
 
 | Group | Command | Tests | Coverage |
 |---|---|---|---|
-| Accounts | `just test-accounts` | 66 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts, encoding, request builder, state capture |
-| Transactions | `just test-transactions` | 41 | transfer, sendTransaction, simulate, signatures, lifecycle, multi-instruction, nonce, scenarios, commitment lifecycle |
-| Blocks | `just test-blocks` | 45 | getBlock, getSlot, epoch, blockhash, blockProduction, blockCommitment, txCount, commitment levels, blockhash validity |
-| Network | `just test-network` | 26 | supply, inflation, rent, performance, prioritization fees, slot leaders |
+| Accounts | `just test-accounts` | 71 | getBalance, getAccountInfo, airdrop, getLargestAccounts, getProgramAccounts, encoding, token queries, request builder, state capture |
+| Transactions | `just test-transactions` | 56 | transfer, sendTransaction, simulate errors, signatures, lifecycle, multi-instruction, nonce, scenarios, versioned tx, commitment |
+| Blocks | `just test-blocks` | 45 | getBlock, getSlot, epoch, blockhash validity, blockProduction, blockCommitment, txCount, commitment levels |
+| Network | `just test-network` | 34 | supply, inflation, rent, performance, prioritization fees, slot leaders, validator identity, cluster metadata |
 | Cluster Info | `just test-cluster-info` | 10 | clusterNodes, leaderSchedule, voteAccounts |
-| Errors | `just test-errors` | 40 | invalid params, unknown methods, edge cases, concurrent ops, batch limits, stress tests |
+| Errors | `just test-errors` | 52 | invalid params, unknown methods, edge cases, RPC errors, concurrent ops, batch limits, stress tests |
 | Programs | `just test-programs` | 129 | native programs, sysvars, SPL token lifecycle + advanced, memo, compute budget, vote, stake |
 | WebSocket | `just websocket` | 27 | slot, logs, account, root, signature, program subscriptions, advanced patterns |
 | Smoke | `just smoke` | 8 | health, version, genesis, batch |
