@@ -55,7 +55,8 @@ async def test_simulate_successful_transfer(
     tx_b64 = base64.b64encode(tx_bytes).decode()
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert result["err"] is None
+    value = result["value"]
+    assert value["err"] is None
 
 
 async def test_simulate_insufficient_funds(
@@ -72,7 +73,8 @@ async def test_simulate_insufficient_funds(
     tx_b64 = base64.b64encode(tx_bytes).decode()
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert result["err"] is not None
+    value = result["value"]
+    assert value["err"] is not None
 
 
 async def test_simulate_returns_logs(
@@ -89,9 +91,10 @@ async def test_simulate_returns_logs(
     tx_b64 = base64.b64encode(tx_bytes).decode()
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert "logs" in result
-    assert isinstance(result["logs"], list)
-    assert len(result["logs"]) > 0
+    value = result["value"]
+    assert "logs" in value
+    assert isinstance(value["logs"], list)
+    assert len(value["logs"]) > 0
 
 
 async def test_simulate_returns_units_consumed(
@@ -108,9 +111,10 @@ async def test_simulate_returns_units_consumed(
     tx_b64 = base64.b64encode(tx_bytes).decode()
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert "unitsConsumed" in result
-    assert isinstance(result["unitsConsumed"], int)
-    assert result["unitsConsumed"] > 0
+    value = result["value"]
+    assert "unitsConsumed" in value
+    assert isinstance(value["unitsConsumed"], int)
+    assert value["unitsConsumed"] > 0
 
 
 async def test_simulate_returns_accounts(

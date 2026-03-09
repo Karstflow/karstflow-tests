@@ -39,8 +39,9 @@ async def test_simulate_memo_tx_logs(
     tx_b64 = await _build_and_encode(solana_client, sender, [ix])
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert result["err"] is None
-    logs = result["logs"]
+    value = result["value"]
+    assert value["err"] is None
+    logs = value["logs"]
     assert any("hello-simulate" in log for log in logs)
 
 
@@ -59,8 +60,9 @@ async def test_simulate_multi_instruction(
     tx_b64 = await _build_and_encode(solana_client, sender, ixs)
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert result["err"] is None
-    assert result["unitsConsumed"] > 0
+    value = result["value"]
+    assert value["err"] is None
+    assert value["unitsConsumed"] > 0
 
 
 async def test_simulate_transfer_to_self(
@@ -80,7 +82,8 @@ async def test_simulate_transfer_to_self(
     tx_b64 = await _build_and_encode(solana_client, sender, [ix])
 
     result = await rpc_client.simulate_transaction(tx_b64)
-    assert result["err"] is None
+    value = result["value"]
+    assert value["err"] is None
 
 
 async def test_simulate_zero_lamport_transfer(
@@ -125,5 +128,5 @@ async def test_simulate_idempotent(
     result1 = await rpc_client.simulate_transaction(tx_b64)
     result2 = await rpc_client.simulate_transaction(tx_b64)
 
-    assert result1["err"] == result2["err"]
-    assert result1["unitsConsumed"] == result2["unitsConsumed"]
+    assert result1["value"]["err"] == result2["value"]["err"]
+    assert result1["value"]["unitsConsumed"] == result2["value"]["unitsConsumed"]

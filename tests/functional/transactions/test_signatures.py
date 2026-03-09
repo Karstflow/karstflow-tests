@@ -5,6 +5,7 @@ from __future__ import annotations
 from solana.rpc.async_api import AsyncClient
 from solders.keypair import Keypair
 from solders.signature import Signature
+from solders.transaction_status import TransactionConfirmationStatus
 
 from karstflow_tests.config import TestConfig
 from karstflow_tests.factories import TransactionFactory
@@ -29,7 +30,10 @@ async def test_signature_status_confirmed(
     statuses = result.value
     assert len(statuses) == 1
     assert statuses[0] is not None
-    assert statuses[0].confirmation_status in ("confirmed", "finalized")
+    assert statuses[0].confirmation_status in (
+        TransactionConfirmationStatus.Confirmed,
+        TransactionConfirmationStatus.Finalized,
+    )
 
 
 async def test_signature_status_unknown(solana_client: AsyncClient) -> None:
