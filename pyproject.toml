@@ -52,6 +52,10 @@ markers = [
     "network: Network and validator info tests",
     "errors: Error handling and edge cases",
     "comparison: RPC comparison tests against reference node",
+    "deploy: BPF program deployment tests",
+    "pda: Program Derived Address tests",
+    "cpi: Cross-Program Invocation tests",
+    "alt: Address Lookup Table lifecycle tests",
 ]
 timeout = 60
 

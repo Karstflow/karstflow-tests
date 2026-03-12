@@ -6,7 +6,9 @@ and building program instructions for testing the validator's SBPF runtime.
 
 from __future__ import annotations
 
+import json
 import struct
+from pathlib import Path
 
 from solana.rpc.async_api import AsyncClient
 from solders.instruction import AccountMeta, Instruction
@@ -25,6 +27,11 @@ BPF_LOADER = Pubkey.from_string("BPFLoader2111111111111111111111111111111111")
 BPF_LOADER_UPGRADEABLE = Pubkey.from_string("BPFLoaderUpgradeab1e11111111111111111111111")
 MEMO_PROGRAM_V2 = Pubkey.from_string("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr")
 SYSTEM_PROGRAM = Pubkey.from_string("11111111111111111111111111111111")
+
+FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent / "fixtures" / "programs"
+
+# BPF Loader v2 write chunk size (must fit in single tx)
+BPF_LOADER_WRITE_CHUNK = 900
 
 
 async def get_rpc_url(client: AsyncClient) -> str:
@@ -215,3 +222,122 @@ async def create_nonce_account(
     rpc_url = await get_rpc_url(client)
     await wait_for_confirmation(rpc_url, str(resp.value))
     return nonce_account
+
+
+def load_program_bytes(name: str) -> bytes:
+    """Load compiled .so program bytes from fixtures directory."""
+    so_path = FIXTURES_DIR / f"{name}.so"
+    if not so_path.exists():
+        msg = f"Program .so not found: {so_path}"
+        raise FileNotFoundError(msg)
+    return so_path.read_bytes()
+
+
+def load_program_keypair(name: str) -> Keypair:
+    """Load program keypair from fixtures directory."""
+    kp_path = FIXTURES_DIR / f"{name}-keypair.json"
+    if not kp_path.exists():
+        msg = f"Program keypair not found: {kp_path}"
+        raise FileNotFoundError(msg)
+    secret_bytes = bytes(json.loads(kp_path.read_text()))
+    return Keypair.from_bytes(secret_bytes)
+
+
+def _build_bpf_loader_write_ix(
+    program_account: Pubkey,
+    offset: int,
+    chunk: bytes,
+) -> Instruction:
+    """Build BPF Loader v2 Write instruction (bincode format)."""
+    # bincode: disc(u32) + offset(u32) + vec_len(u64) + data
+    data = struct.pack("<IIQ", 0, offset, len(chunk)) + chunk
+    return Instruction(
+        program_id=BPF_LOADER,
+        data=data,
+        accounts=[
+            AccountMeta(pubkey=program_account, is_signer=True, is_writable=True),
+        ],
+    )
+
+
+def _build_bpf_loader_finalize_ix(program_account: Pubkey) -> Instruction:
+    """Build BPF Loader v2 Finalize instruction."""
+    rent_sysvar = Pubkey.from_string("SysvarRent111111111111111111111111111111111")
+    data = struct.pack("<I", 1)
+    return Instruction(
+        program_id=BPF_LOADER,
+        data=data,
+        accounts=[
+            AccountMeta(pubkey=program_account, is_signer=True, is_writable=True),
+            AccountMeta(pubkey=rent_sysvar, is_signer=False, is_writable=False),
+        ],
+    )
+
+
+async def deploy_program(
+    client: AsyncClient,
+    payer: Keypair,
+    program_name: str,
+    *,
+    program_keypair: Keypair | None = None,
+) -> Pubkey:
+    """Deploy a BPF program via BPF Loader v2.
+
+    Loads .so from fixtures, creates program account, writes bytecode
+    in chunks, and finalizes. Returns the program pubkey.
+    """
+    program_bytes = load_program_bytes(program_name)
+    if program_keypair is None:
+        program_keypair = load_program_keypair(program_name)
+
+    rpc_url = await get_rpc_url(client)
+    space = len(program_bytes)
+
+    # Create program account
+    rent_resp = await client.get_minimum_balance_for_rent_exemption(space)
+    lamports = rent_resp.value
+    blockhash_resp = await client.get_latest_blockhash()
+    blockhash = blockhash_resp.value.blockhash
+
+    create_ix = create_account(
+        CreateAccountParams(
+            from_pubkey=payer.pubkey(),
+            to_pubkey=program_keypair.pubkey(),
+            lamports=lamports,
+            space=space,
+            owner=BPF_LOADER,
+        )
+    )
+    msg = Message.new_with_blockhash([create_ix], payer.pubkey(), blockhash)
+    tx = Transaction.new_unsigned(msg)
+    tx.sign([payer, program_keypair], blockhash)
+    resp = await client.send_transaction(tx)
+    await wait_for_confirmation(rpc_url, str(resp.value))
+
+    # Write program data in chunks
+    offset = 0
+    while offset < space:
+        chunk = program_bytes[offset : offset + BPF_LOADER_WRITE_CHUNK]
+        write_ix = _build_bpf_loader_write_ix(
+            program_keypair.pubkey(), offset, chunk
+        )
+        blockhash_resp = await client.get_latest_blockhash()
+        blockhash = blockhash_resp.value.blockhash
+        msg = Message.new_with_blockhash([write_ix], payer.pubkey(), blockhash)
+        tx = Transaction.new_unsigned(msg)
+        tx.sign([payer, program_keypair], blockhash)
+        resp = await client.send_transaction(tx)
+        await wait_for_confirmation(rpc_url, str(resp.value))
+        offset += BPF_LOADER_WRITE_CHUNK
+
+    # Finalize
+    finalize_ix = _build_bpf_loader_finalize_ix(program_keypair.pubkey())
+    blockhash_resp = await client.get_latest_blockhash()
+    blockhash = blockhash_resp.value.blockhash
+    msg = Message.new_with_blockhash([finalize_ix], payer.pubkey(), blockhash)
+    tx = Transaction.new_unsigned(msg)
+    tx.sign([payer, program_keypair], blockhash)
+    resp = await client.send_transaction(tx)
+    await wait_for_confirmation(rpc_url, str(resp.value))
+
+    return program_keypair.pubkey()
