@@ -25,7 +25,9 @@ async def test_builder_get_account_info(rpc_client: RpcClient) -> None:
     )
     result = await rpc_client.execute(spec)
     assert result is not None
-    assert result["executable"]
+    info = result["value"]
+    assert info is not None
+    assert info["executable"]
 
 
 async def test_builder_get_account_with_data_slice(rpc_client: RpcClient) -> None:

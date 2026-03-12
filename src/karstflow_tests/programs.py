@@ -113,8 +113,8 @@ async def create_program_owned_account(
 
 def build_compute_budget_set_units(units: int) -> Instruction:
     """Build ComputeBudget SetComputeUnitLimit instruction."""
-    # Program: ComputeBudget111111111111111111111111111
-    compute_budget = Pubkey.from_string("ComputeBudget111111111111111111111111111")
+    # Program: ComputeBudget111111111111111111111111111111
+    compute_budget = Pubkey.from_string("ComputeBudget111111111111111111111111111111")
     # Instruction 2: SetComputeUnitLimit (u8=2, u32=units)
     data = struct.pack("<BI", 2, units)
     return Instruction(program_id=compute_budget, data=data, accounts=[])
@@ -122,7 +122,7 @@ def build_compute_budget_set_units(units: int) -> Instruction:
 
 def build_compute_budget_set_price(micro_lamports: int) -> Instruction:
     """Build ComputeBudget SetComputeUnitPrice instruction."""
-    compute_budget = Pubkey.from_string("ComputeBudget111111111111111111111111111")
+    compute_budget = Pubkey.from_string("ComputeBudget111111111111111111111111111111")
     # Instruction 3: SetComputeUnitPrice (u8=3, u64=price)
     data = struct.pack("<BQ", 3, micro_lamports)
     return Instruction(program_id=compute_budget, data=data, accounts=[])

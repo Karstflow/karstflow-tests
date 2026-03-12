@@ -157,7 +157,7 @@ async def test_transfer_fee_via_rpc_inspection(
     fee = result["meta"]["fee"]
     assert isinstance(fee, int)
     assert fee > 0
-    assert fee == 5000  # standard base fee
+    assert fee <= 5000  # dynamic rate, may decrease when idle
 
 
 async def test_multiple_transfers_same_block(

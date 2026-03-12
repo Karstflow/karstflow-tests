@@ -25,7 +25,9 @@ async def test_nonce_account_data_80_bytes(
     payer = await funded_sender(solana_client, test_config.rpc_url, 10_000_000_000)
     nonce_kp = await create_nonce_account(solana_client, payer)
 
-    info = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    resp = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    assert resp is not None
+    info = resp["value"]
     assert info is not None
     data = b64.b64decode(info["data"][0])
     assert len(data) == 80
@@ -40,7 +42,9 @@ async def test_nonce_account_owned_by_system(
     payer = await funded_sender(solana_client, test_config.rpc_url, 10_000_000_000)
     nonce_kp = await create_nonce_account(solana_client, payer)
 
-    info = await rpc_client.get_account_info(str(nonce_kp.pubkey()))
+    resp = await rpc_client.get_account_info(str(nonce_kp.pubkey()))
+    assert resp is not None
+    info = resp["value"]
     assert info is not None
     assert info["owner"] == "11111111111111111111111111111111"
 
@@ -55,7 +59,9 @@ async def test_nonce_account_is_rent_exempt(
     nonce_kp = await create_nonce_account(solana_client, payer)
 
     min_rent = await rpc_client.get_minimum_balance_for_rent_exemption(80)
-    info = await rpc_client.get_account_info(str(nonce_kp.pubkey()))
+    resp = await rpc_client.get_account_info(str(nonce_kp.pubkey()))
+    assert resp is not None
+    info = resp["value"]
     assert info is not None
     assert info["lamports"] >= min_rent
 
@@ -69,7 +75,9 @@ async def test_nonce_authority_matches_creator(
     payer = await funded_sender(solana_client, test_config.rpc_url, 10_000_000_000)
     nonce_kp = await create_nonce_account(solana_client, payer)
 
-    info = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    resp = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    assert resp is not None
+    info = resp["value"]
     assert info is not None
     data = b64.b64decode(info["data"][0])
     # Nonce layout: 4B version + 4B state + 32B authority + 32B blockhash
@@ -88,7 +96,9 @@ async def test_nonce_has_stored_blockhash(
     payer = await funded_sender(solana_client, test_config.rpc_url, 10_000_000_000)
     nonce_kp = await create_nonce_account(solana_client, payer)
 
-    info = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    resp = await rpc_client.get_account_info(str(nonce_kp.pubkey()), encoding="base64")
+    assert resp is not None
+    info = resp["value"]
     assert info is not None
     data = b64.b64decode(info["data"][0])
     # Blockhash is at offset 40, 32 bytes

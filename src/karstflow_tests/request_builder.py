@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass
+@dataclass(frozen=True)
 class RpcRequestSpec:
     """Immutable specification for an RPC request."""
 

@@ -29,8 +29,10 @@ async def test_block_production_has_validator_entries(raw_rpc: RpcClient) -> Non
 
 async def test_block_commitment(raw_rpc: RpcClient) -> None:
     """getBlockCommitment returns commitment data for a slot."""
+    # Use a slightly older slot to avoid confirmed/finalized gap:
+    # getSlot defaults to confirmed but getBlockCommitment defaults to finalized.
     slot = await raw_rpc.get_slot()
-    result = await raw_rpc.get_block_commitment(slot)
+    result = await raw_rpc.get_block_commitment(max(0, slot - 5))
     assert isinstance(result, dict)
     assert "totalStake" in result
     assert result["totalStake"] > 0

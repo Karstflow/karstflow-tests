@@ -33,7 +33,7 @@ class TestConfig:
         default_factory=lambda: os.environ.get("KARSTFLOW_RPC_URL", "http://localhost:8899")
     )
     ws_url: str = field(
-        default_factory=lambda: os.environ.get("KARSTFLOW_WS_URL", "ws://localhost:8900")
+        default_factory=lambda: os.environ.get("KARSTFLOW_WS_URL", "ws://localhost:8899")
     )
     default_commitment: Commitment = Commitment.CONFIRMED
     request_timeout: float = 30.0

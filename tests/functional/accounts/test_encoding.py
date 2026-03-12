@@ -22,7 +22,9 @@ async def test_account_info_base64_encoding(rpc_client: RpcClient) -> None:
     )
     result = await rpc_client.execute(spec)
     assert result is not None
-    data = result["data"]
+    info = result["value"]
+    assert info is not None
+    data = info["data"]
     assert isinstance(data, list)
     assert data[1] == "base64"
     # Verify it's valid base64
@@ -55,29 +57,40 @@ async def test_account_info_json_parsed(rpc_client: RpcClient) -> None:
 
 async def test_account_info_data_slice(rpc_client: RpcClient) -> None:
     """getAccountInfo with dataSlice returns truncated data."""
+    # Use Clock sysvar — it has 40 bytes of data (unlike native programs which have 0)
+    sysvar_clock = "SysvarC1ock11111111111111111111111111111111"
+
     # First get full data
     full_spec = (
         RequestBuilder("getAccountInfo")
-        .with_pubkey("Vote111111111111111111111111111111111111111")
+        .with_pubkey(sysvar_clock)
         .with_encoding("base64")
         .build()
     )
     full_result = await rpc_client.execute(full_spec)
     assert full_result is not None
+    full_info = full_result["value"]
+    assert full_info is not None
+    full_data = base64.b64decode(full_info["data"][0])
+    assert len(full_data) > 4
 
     # Now get a slice
     slice_spec = (
         RequestBuilder("getAccountInfo")
-        .with_pubkey("Vote111111111111111111111111111111111111111")
+        .with_pubkey(sysvar_clock)
         .with_encoding("base64")
         .with_data_slice(0, 4)
         .build()
     )
     slice_result = await rpc_client.execute(slice_spec)
     assert slice_result is not None
-    # Sliced data should be shorter
-    slice_data = base64.b64decode(slice_result["data"][0])
+    slice_info = slice_result["value"]
+    assert slice_info is not None
+    # Sliced data should be exactly 4 bytes
+    slice_data = base64.b64decode(slice_info["data"][0])
     assert len(slice_data) == 4
+    # Sliced bytes should match the first 4 bytes of full data
+    assert slice_data == full_data[:4]
 
 
 async def test_multiple_accounts_base64(rpc_client: RpcClient) -> None:

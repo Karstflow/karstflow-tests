@@ -106,7 +106,7 @@ async def test_insufficient_funds_transfer(
     tx = await build_raw_transfer(solana_client, sender, recipient.pubkey(), 999_999_999_999)
     from solana.rpc.core import RPCException
 
-    with pytest.raises(RPCException, match="insufficient"):
+    with pytest.raises(RPCException, match=r"(?i)insufficient"):
         await solana_client.send_transaction(tx)
 
 
