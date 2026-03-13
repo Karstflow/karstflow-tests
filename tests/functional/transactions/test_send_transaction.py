@@ -25,10 +25,15 @@ async def test_send_signed_transaction(
 async def test_send_transaction_returns_signature(
     solana_client: AsyncClient, test_config: TestConfig, tx_factory: TransactionFactory
 ) -> None:
-    """sendTransaction returns a base58 signature string."""
+    """sendTransaction returns a base58 signature, and the transaction confirms on-chain."""
     sender = await funded_sender(solana_client, test_config.rpc_url, 2_000_000_000)
     tx = await tx_factory.build_transfer(sender, sender.pubkey(), 1_000)
     result = await solana_client.send_transaction(tx)
     sig = str(result.value)
     # Solana signatures are 88 chars in base58
     assert 80 <= len(sig) <= 90
+    # Wait for on-chain confirmation
+    await wait_for_confirmation(test_config.rpc_url, sig)
+    # Verify the transaction is visible via getSignatureStatuses
+    statuses = await solana_client.get_signature_statuses([result.value])
+    assert statuses.value[0] is not None

@@ -145,6 +145,10 @@ async def test_send_raw_bytes_via_rpc(
     assert len(sig) > 40
     await wait_for_confirmation(test_config.rpc_url, sig)
 
+    # Verify transfer landed on-chain
+    bal = await solana_client.get_balance(recipient.pubkey())
+    assert bal.value == 50_000
+
 
 async def test_send_verify_exact_balances(
     solana_client: AsyncClient,

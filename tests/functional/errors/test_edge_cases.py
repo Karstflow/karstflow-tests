@@ -66,12 +66,15 @@ async def test_concurrent_transfers(
     solana_client: AsyncClient,
     test_config: TestConfig,
 ) -> None:
-    """Multiple concurrent transfers succeed."""
+    """Multiple concurrent transfers succeed and update recipient balances."""
+    transfer_amount = 100_000
     sender = await funded_sender(solana_client, test_config.rpc_url, 10_000_000_000)
     recipients = [Keypair() for _ in range(3)]
 
     tasks = [
-        send_simple_transfer(solana_client, test_config.rpc_url, sender, r.pubkey(), 100_000)
+        send_simple_transfer(
+            solana_client, test_config.rpc_url, sender, r.pubkey(), transfer_amount
+        )
         for r in recipients
     ]
     sigs = await asyncio.gather(*tasks)
@@ -79,18 +82,34 @@ async def test_concurrent_transfers(
     for sig in sigs:
         assert len(sig) > 40
 
+    # Verify each recipient received the funds on-chain
+    for recipient in recipients:
+        balance = (await solana_client.get_balance(recipient.pubkey())).value
+        assert balance == transfer_amount, (
+            f"Expected {transfer_amount} lamports, got {balance}"
+        )
 
-async def test_zero_lamport_transfer_fails(
+
+async def test_zero_lamport_transfer_succeeds(
     solana_client: AsyncClient,
     test_config: TestConfig,
 ) -> None:
-    """Zero-lamport transfer should still succeed (no-op transfer is valid)."""
+    """Zero-lamport transfer confirms on-chain without changing balances."""
     sender = await funded_sender(solana_client, test_config.rpc_url)
     recipient = Keypair()
+    sender_balance_before = (await solana_client.get_balance(sender.pubkey())).value
+
     sig = await send_simple_transfer(
         solana_client, test_config.rpc_url, sender, recipient.pubkey(), 0
     )
     assert len(sig) > 40
+
+    # Recipient should still have 0 (no lamports transferred)
+    recipient_balance = (await solana_client.get_balance(recipient.pubkey())).value
+    assert recipient_balance == 0
+    # Sender balance may decrease by fee, but should not drop by transfer amount
+    sender_balance_after = (await solana_client.get_balance(sender.pubkey())).value
+    assert sender_balance_after <= sender_balance_before
 
 
 async def test_insufficient_funds_transfer(
