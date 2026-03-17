@@ -24,7 +24,11 @@ async def syscall_program(solana_client, funded_keypair, test_config):
     acct = await solana_client.get_account_info(kp.pubkey())
     if acct.value is not None and acct.value.executable:
         return kp.pubkey()
-    return await deploy_program(solana_client, funded_keypair, "syscall_test")
+    try:
+        return await deploy_program(solana_client, funded_keypair, "syscall_test")
+    except Exception:
+        # Deploy may have already completed in another test
+        return kp.pubkey()
 
 
 @pytest.mark.programs
@@ -51,7 +55,7 @@ class TestSyscallEpochSchedule:
 
         return_data = resp.value.return_data
         assert return_data is not None
-        data = bytes(return_data.data[0])
+        data = return_data.data
         slots_per_epoch = struct.unpack("<Q", data[:8])[0]
         assert slots_per_epoch > 0, "slots_per_epoch must be positive"
 
@@ -79,7 +83,7 @@ class TestSyscallEpochSchedule:
         assert resp.value.err is None
 
         return_data = resp.value.return_data
-        data = bytes(return_data.data[0])
+        data = return_data.data
         bpf_slots_per_epoch = struct.unpack("<Q", data[:8])[0]
 
         assert bpf_slots_per_epoch == rpc_slots_per_epoch

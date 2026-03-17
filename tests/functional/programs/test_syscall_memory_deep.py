@@ -22,7 +22,11 @@ async def syscall_program(solana_client, funded_keypair, test_config):
     acct = await solana_client.get_account_info(kp.pubkey())
     if acct.value is not None and acct.value.executable:
         return kp.pubkey()
-    return await deploy_program(solana_client, funded_keypair, "syscall_test")
+    try:
+        return await deploy_program(solana_client, funded_keypair, "syscall_test")
+    except Exception:
+        # Deploy may have already completed in another test
+        return kp.pubkey()
 
 
 @pytest.mark.programs
@@ -49,7 +53,7 @@ class TestSyscallMemoryDeep:
 
         return_data = resp.value.return_data
         assert return_data is not None
-        data = bytes(return_data.data[0])
+        data = return_data.data
         assert data[0] == 1, "memmove overlapping copy should succeed"
 
     async def test_large_memops_round_trip(
@@ -72,7 +76,7 @@ class TestSyscallMemoryDeep:
 
         return_data = resp.value.return_data
         assert return_data is not None
-        data = bytes(return_data.data[0])
+        data = return_data.data
         assert data[0] == 1, "equal buffers should compare as equal"
         assert data[1] == 1, "modified buffer should compare as not equal"
 
@@ -96,6 +100,6 @@ class TestSyscallMemoryDeep:
 
         return_data = resp.value.return_data
         assert return_data is not None
-        data = bytes(return_data.data[0])
+        data = return_data.data
         assert data[0] == 1, "equal buffers"
         assert data[1] == 1, "not-equal after modify"
