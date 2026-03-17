@@ -52,6 +52,19 @@ class ClusterHandle:
     nodes: list[NodeHandle] = field(default_factory=list)
     compose_file: str | None = None
 
+    @classmethod
+    def from_urls(cls, urls: list[str]) -> ClusterHandle:
+        """Create a handle from pre-running node URLs."""
+        nodes = []
+        for url in urls:
+            ws_url = (
+                url.replace("http://", "ws://")
+                .replace(":8899", ":8900")
+                .replace(":8909", ":8910")
+            )
+            nodes.append(NodeHandle(rpc_url=url, ws_url=ws_url))
+        return cls(nodes=nodes)
+
     async def wait_all_ready(self, timeout: float = 60.0) -> None:
         """Wait until all nodes respond to health checks."""
         await asyncio.gather(*(node.wait_ready(timeout=timeout) for node in self.nodes))
