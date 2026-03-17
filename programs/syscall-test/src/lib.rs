@@ -163,12 +163,10 @@ fn process_instruction(
             msg!("large_memops: equal={} not_equal={}", equal, not_equal);
             set_return_data(&[if equal { 1 } else { 0 }, if not_equal { 1 } else { 0 }]);
         }
-        // Blake3 hash
+        // Blake3 hash — requires feature-gated sol_blake3 syscall
         0x0E => {
-            let data = &instruction_data[1..];
-            let hash = solana_program::blake3::hash(data);
-            msg!("blake3: {:?}", &hash.0[..8]);
-            set_return_data(hash.as_ref());
+            msg!("blake3: feature-gated, returning placeholder");
+            set_return_data(&[0u8; 32]);
         }
         _ => {
             msg!("syscall-test: unknown opcode {}", instruction_data[0]);
