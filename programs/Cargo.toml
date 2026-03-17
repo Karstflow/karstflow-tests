@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["hello-log", "cpi-proxy", "pda-counter", "syscall-test", "cpi-depth", "upgrade-v1", "upgrade-v2", "curve-test"]
+
+[workspace.dependencies]
+solana-program = "2.2"
