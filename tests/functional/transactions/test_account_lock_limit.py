@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import struct
 
-import pytest
 from solana.rpc.async_api import AsyncClient
 from solders.address_lookup_table_account import AddressLookupTableAccount
 from solders.instruction import AccountMeta, Instruction
@@ -97,12 +96,6 @@ async def _create_alt_with_addresses(
     return alt_address
 
 
-@pytest.mark.xfail(
-    reason="node gap: v0/ALT loaded-address resolution incomplete — the execute "
-    "path (dev-mode RPC) does not resolve address_table_lookups and the simulate "
-    "path's resolution is ineffective; see QB-019. Flips to xpass when fixed.",
-    strict=False,
-)
 async def test_alt_v0_transfer_executes(
     solana_client: AsyncClient,
     test_config: TestConfig,
@@ -122,8 +115,10 @@ async def test_alt_v0_transfer_executes(
     )
 
     alt_acc = AddressLookupTableAccount(key=alt, addresses=[recipient.pubkey()])
+    # Transfer at least the rent-exempt minimum so the fresh recipient is valid.
+    amount = 2_000_000
     ix = transfer(
-        TransferParams(from_pubkey=payer.pubkey(), to_pubkey=recipient.pubkey(), lamports=250_000)
+        TransferParams(from_pubkey=payer.pubkey(), to_pubkey=recipient.pubkey(), lamports=amount)
     )
     blockhash = (await solana_client.get_latest_blockhash()).value.blockhash
     msg = MessageV0.try_compile(payer.pubkey(), [ix], [alt_acc], blockhash)
@@ -131,15 +126,9 @@ async def test_alt_v0_transfer_executes(
     resp = await solana_client.send_transaction(vtx)
     await wait_for_confirmation(rpc_url, str(resp.value))
 
-    assert (await solana_client.get_balance(recipient.pubkey())).value == 250_000
+    assert (await solana_client.get_balance(recipient.pubkey())).value == amount
 
 
-@pytest.mark.xfail(
-    reason="depends on v0/ALT loaded-address resolution (node gap, QB-019): the ALT "
-    "setup or v0 resolution currently fails before the 64-lock limit can be exercised. "
-    "Flips to xpass when v0+ALT support lands.",
-    strict=False,
-)
 async def test_account_locks_over_limit_rejected(
     solana_client: AsyncClient,
     test_config: TestConfig,
