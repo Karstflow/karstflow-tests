@@ -61,9 +61,15 @@ async def test_pda_multiple_seeds() -> None:
 
 
 async def test_pda_max_seeds() -> None:
-    """PDA derivation with 16 seeds (Solana max)."""
+    """PDA derivation with the maximum number of user seeds.
+
+    Solana caps program-address derivation at MAX_SEEDS = 16, but
+    ``find_program_address`` appends the bump as an extra seed, so the maximum
+    number of *user* seeds is 15 (15 + bump = 16). Sixteen user seeds would push
+    the total to 17 and exhaust every bump candidate.
+    """
     program_id = Keypair().pubkey()
-    seeds = [bytes([i]) for i in range(16)]
+    seeds = [bytes([i]) for i in range(15)]
     _pda, bump = Pubkey.find_program_address(seeds, program_id)
     assert bump <= 255
 

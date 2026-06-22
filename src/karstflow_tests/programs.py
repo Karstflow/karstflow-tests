@@ -32,6 +32,11 @@ FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent / "fixtures" / "pro
 
 # BPF Loader v2 write chunk size (must fit in single tx)
 BPF_LOADER_WRITE_CHUNK = 900
+# Number of Write transactions broadcast before confirming a batch. Each tx
+# reserves its full compute budget against the per-block cost limit (100M CU),
+# so the batch must stay well under it (~32 * 1.4M = 45M) while still amortising
+# the per-slot confirmation latency across many chunks.
+BPF_LOADER_WRITE_BATCH = 32
 
 
 async def get_rpc_url(client: AsyncClient) -> str:
@@ -314,19 +319,31 @@ async def deploy_program(
     resp = await client.send_transaction(tx)
     await wait_for_confirmation(rpc_url, str(resp.value))
 
-    # Write program data in chunks
+    # Write program data in chunks. Broadcast writes in batches and confirm
+    # each batch before starting the next. Confirming after every single chunk
+    # costs ~1 slot per chunk (a multi-KB program took ~1 minute); broadcasting
+    # all chunks at once instead overruns the per-block cost limit (every tx
+    # reserves its full compute budget against the block). Batching overlaps the
+    # per-slot confirmation latency while keeping each block within budget.
     offset = 0
     while offset < space:
-        chunk = program_bytes[offset : offset + BPF_LOADER_WRITE_CHUNK]
-        write_ix = _build_bpf_loader_write_ix(program_keypair.pubkey(), offset, chunk)
-        blockhash_resp = await client.get_latest_blockhash()
-        blockhash = blockhash_resp.value.blockhash
-        msg = Message.new_with_blockhash([write_ix], payer.pubkey(), blockhash)
-        tx = Transaction.new_unsigned(msg)
-        tx.sign([payer, program_keypair], blockhash)
-        resp = await client.send_transaction(tx)
-        await wait_for_confirmation(rpc_url, str(resp.value))
-        offset += BPF_LOADER_WRITE_CHUNK
+        batch_sigs: list[str] = []
+        for _ in range(BPF_LOADER_WRITE_BATCH):
+            if offset >= space:
+                break
+            chunk = program_bytes[offset : offset + BPF_LOADER_WRITE_CHUNK]
+            write_ix = _build_bpf_loader_write_ix(program_keypair.pubkey(), offset, chunk)
+            blockhash_resp = await client.get_latest_blockhash()
+            blockhash = blockhash_resp.value.blockhash
+            msg = Message.new_with_blockhash([write_ix], payer.pubkey(), blockhash)
+            tx = Transaction.new_unsigned(msg)
+            tx.sign([payer, program_keypair], blockhash)
+            resp = await client.send_transaction(tx)
+            batch_sigs.append(str(resp.value))
+            offset += BPF_LOADER_WRITE_CHUNK
+
+        for sig in batch_sigs:
+            await wait_for_confirmation(rpc_url, sig)
 
     # Finalize
     finalize_ix = _build_bpf_loader_finalize_ix(program_keypair.pubkey())
