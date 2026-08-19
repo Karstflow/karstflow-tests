@@ -392,12 +392,8 @@ def _build_upg_write_ix(
     buffer: Pubkey, authority: Pubkey, offset: int, chunk: bytes
 ) -> Instruction:
     """Write instruction for BPF Loader Upgradeable."""
-    data = (
-        struct.pack("<I", _UPG_WRITE)
-        + struct.pack("<I", offset)
-        + struct.pack("<I", len(chunk))
-        + chunk
-    )
+    # bincode: u32 disc + u32 offset + u64 bytes_len + bytes
+    data = struct.pack("<IIQ", _UPG_WRITE, offset, len(chunk)) + chunk
     return Instruction(
         program_id=BPF_LOADER_UPGRADEABLE,
         data=data,
@@ -414,11 +410,12 @@ def _build_upg_deploy_ix(
     program: Pubkey,
     buffer: Pubkey,
     authority: Pubkey,
+    max_data_len: int,
 ) -> Instruction:
     """DeployWithMaxDataLen instruction for BPF Loader Upgradeable."""
     # bincode: u32 disc + u64 max_data_len
     # max_data_len is usually 2x the program size for future upgrades
-    data = struct.pack("<I", _UPG_DEPLOY)
+    data = struct.pack("<IQ", _UPG_DEPLOY, max_data_len)
     return Instruction(
         program_id=BPF_LOADER_UPGRADEABLE,
         data=data,
@@ -602,6 +599,7 @@ async def deploy_program_upgradeable(
         program_keypair.pubkey(),
         buffer_kp.pubkey(),
         authority.pubkey(),
+        2 * len(program_bytes),
     )
 
     msg = Message.new_with_blockhash([create_ix, deploy_ix], payer.pubkey(), blockhash)

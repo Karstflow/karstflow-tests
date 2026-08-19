@@ -41,7 +41,29 @@ async def _simulate_and_get_return_data(solana_client, funded_keypair, ix):
 
 
 @pytest.mark.programs
-@pytest.mark.skip(reason="BPF Loader Upgradeable deploy not yet supported in karstflow dev-mode")
+async def test_upgradeable_deploy_rejected_for_sub_v3_program(solana_client, funded_keypair):
+    """SIMD-0500: deploying an sBPF v0/v1/v2 program is refused.
+
+    Dev-mode genesis activates every feature at slot 0, so
+    `disable_sbpf_v0_v1_v2_deployment` is active and the fixtures are all sBPF v0
+    (`e_flags == 0`). Deployment must be refused at the DeployWithMaxDataLen
+    instruction, after the buffer has been written successfully.
+
+    This is the live-path counterpart of the unit test in `bpf_loader.rs`: it
+    proves the gate reaches a real transaction, not merely a direct call.
+    """
+    from solana.rpc.core import RPCException
+
+    with pytest.raises(RPCException) as excinfo:
+        await deploy_program_upgradeable(solana_client, funded_keypair, "upgrade_v1")
+    assert "SIMD-0500" in str(excinfo.value)
+
+
+@pytest.mark.programs
+@pytest.mark.skip(
+    reason="fixtures are sBPF v0 and dev-mode activates SIMD-0500, which forbids "
+    "sub-v3 deployment; unblocked by rebuilding fixtures/programs/*.so as sBPF v3"
+)
 class TestProgramUpgrade:
     """BPF Loader Upgradeable lifecycle tests."""
 

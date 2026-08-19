@@ -13,3 +13,4 @@ dist/
 .env
 **/target/
 **/target/*
+AGENTS.md
