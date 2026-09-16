@@ -210,6 +210,12 @@ just test-stats
 - **ruff** — linter (16 rule groups) + formatter
 - **mypy** — strict type checking
 
+## Contributing
+
+Sign off every commit with the [Developer Certificate of Origin](DCO) — `git commit -s`, using
+your real name and a reachable email address. There is no CLA. Run `just ci` before opening a
+pull request.
+
 ## License
 
 Copyright (c) 2025-2026 Vladimir Bugaev (boogvar).
