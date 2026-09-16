@@ -212,4 +212,6 @@ just test-stats
 
 ## License
 
-Copyright (c) 2025-2026 boogvar. All rights reserved.
+Copyright (c) 2025-2026 Vladimir Bugaev (boogvar).
+
+Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
